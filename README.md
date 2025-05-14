@@ -4,6 +4,8 @@
 
 This Shiny app enables users of the R package `TrialSimulator` to generate R codes for simulation by specifying simulation settings from UI. 
 
+This app is still under development and is not ready for use. 
+
 ## Installation
 
 You can install the development version of `TrialSimulator` from [GitHub](https://github.com/zhangh12/TrialSimulator) with:
