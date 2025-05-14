@@ -89,7 +89,7 @@ armModuleServer <- function(id, label) {
 
 # ---- UI ----
 ui <- fluidPage(
-  titlePanel("Modular Trial Designer"),
+  titlePanel("Trial Simulator"),
   sidebarLayout(
     sidebarPanel(
       textInput("new_arm", "New Arm Name"),
