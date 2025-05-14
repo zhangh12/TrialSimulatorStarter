@@ -1,103 +1,40 @@
+
 library(shiny)
+library(DT)
 library(glue)
 library(shinyFiles)
 library(fs)
 
-# ---- Arm Module UI ----
-armModuleUI <- function(id) {
-  ns <- NS(id)
-  tagList(
-    textInput(ns("label"), "Arm Label"),
-    numericInput(ns("ratio"), "Randomization Ratio", value = 1, min = 0.1),
-    uiOutput(ns("endpoint_selector")),
-    textInput(ns("endpoint_name"), "Endpoint Name"),
-    textInput(ns("endpoint_type"), "Endpoint Type"),
-    textInput(ns("endpoint_readout"), "Readout"),
-    textInput(ns("endpoint_generator"), "Generator"),
-    textAreaInput(ns("endpoint_args"), "Generator Arguments", rows = 3),
-    actionButton(ns("add_endpoint"), "Add Endpoint"),
-    actionButton(ns("delete_endpoint"), "Delete Endpoint")
-  )
-}
-
-# ---- Arm Module Server ----
-armModuleServer <- function(id, label) {
-  moduleServer(id, function(input, output, session) {
-    state <- reactiveValues(endpoints = list(), selected = NULL)
-    ns <- session$ns
-    
-    observeEvent(input$add_endpoint, {
-      name <- input$endpoint_name
-      if (nzchar(name)) {
-        state$endpoints[[name]] <- list(
-          name = name,
-          type = input$endpoint_type,
-          readout = input$endpoint_readout,
-          generator = input$endpoint_generator,
-          generator_args = input$endpoint_args
-        )
-        state$selected <- name
-        updateTextInput(session, "endpoint_name", value = "")
-        updateTextInput(session, "endpoint_type", value = "")
-        updateTextInput(session, "endpoint_readout", value = "")
-        updateTextInput(session, "endpoint_generator", value = "")
-        updateTextAreaInput(session, "endpoint_args", value = "")
-      }
-    })
-    
-    observeEvent(input$delete_endpoint, {
-      ep <- state$selected
-      if (!is.null(ep)) {
-        state$endpoints[[ep]] <- NULL
-        state$selected <- NULL
-        updateTextInput(session, "endpoint_name", value = "")
-        updateTextInput(session, "endpoint_type", value = "")
-        updateTextInput(session, "endpoint_readout", value = "")
-        updateTextInput(session, "endpoint_generator", value = "")
-        updateTextAreaInput(session, "endpoint_args", value = "")
-      }
-    })
-    
-    observeEvent(input$endpoint_selector, {
-      ep <- input$endpoint_selector
-      if (!is.null(ep) && ep %in% names(state$endpoints)) {
-        ep_data <- state$endpoints[[ep]]
-        updateTextInput(session, "endpoint_name", value = ep_data$name)
-        updateTextInput(session, "endpoint_type", value = ep_data$type)
-        updateTextInput(session, "endpoint_readout", value = ep_data$readout)
-        updateTextInput(session, "endpoint_generator", value = ep_data$generator)
-        updateTextAreaInput(session, "endpoint_args", value = ep_data$generator_args)
-        state$selected <- ep
-      }
-    })
-    
-    output$endpoint_selector <- renderUI({
-      if (length(state$endpoints) == 0) return(NULL)
-      selectInput(ns("endpoint_selector"), "Select Endpoint", choices = names(state$endpoints), selected = state$selected)
-    })
-    
-    return(reactive({
-      list(
-        name = label,
-        label = input$label,
-        ratio = input$ratio,
-        endpoints = state$endpoints
-      )
-    }))
-  })
-}
-
-# ---- UI ----
 ui <- fluidPage(
   titlePanel("Trial Simulator"),
+  
   sidebarLayout(
     sidebarPanel(
-      textInput("new_arm", "New Arm Name"),
+      textInput("arm_label", "Arm Label"),
+      numericInput("arm_ratio", "Randomization Ratio", value = 1, min = 0.1),
       actionButton("add_arm", "➕ Add Arm"),
+      hr(),
+      textInput("ep_name", "Endpoint Name"),
+      textInput("ep_type", "Endpoint Type"),
+      textInput("ep_readout", "Readout"),
+      textInput("ep_generator", "Generator"),
+      textAreaInput("ep_args", "Generator Arguments", rows = 2),
+      actionButton("add_ep", "Add Endpoint"),
+      actionButton("delete_ep", "Delete Selected Endpoint"),
+      hr(),
       textInput("new_event_name", "New Event Name"),
       actionButton("add_event", "➕ Add Event"),
+      textInput("event_logic", "Logic (e.g., A and B)"),
+      selectInput("cond_type", "Condition Type", c("calendar", "enrollment", "event")),
+      textInput("cond_endpoint", "Endpoint"),
+      textInput("cond_arms", "Arms"),
+      numericInput("cond_value", "N or Time", 0),
+      actionButton("add_condition", "Add Condition"),
+      actionButton("delete_event", "Delete Selected Event"),
+      hr(),
       shinySaveButton("save_code_btn", "💾 Save Code to File", "Save Code As...", filetype = list(R = "R"))
     ),
+    
     mainPanel(
       tabsetPanel(id = "main_tabs",
                   tabPanel("Trial",
@@ -108,134 +45,165 @@ ui <- fluidPage(
                            textInput("dropout", "Dropout"),
                            textInput("dropout_arg", "Dropout Argument")
                   ),
-                  tabPanel("Events", uiOutput("events_ui")),
-                  tabPanel("Code", verbatimTextOutput("code_preview"), value = "Code")
+                  tabPanel("Arms",
+                           DTOutput("arm_table"),
+                           DTOutput("endpoint_table")
+                  ),
+                  tabPanel("Events",
+                           DTOutput("event_table"),
+                           DTOutput("condition_table")
+                  ),
+                  tabPanel("Code",
+                           verbatimTextOutput("code_preview")
+                  )
       )
     )
   )
 )
 
-# ---- Server ----
 server <- function(input, output, session) {
-  arms <- reactiveValues(labels = character(), modules = list())
-  events <- reactiveValues(all = list())
+  arms <- reactiveValues(data = data.frame(Label = character(), Ratio = numeric(), stringsAsFactors = FALSE),
+                         endpoints = list(),
+                         selected = NULL)
+  events <- reactiveValues(data = data.frame(Name = character(), Logic = character(), stringsAsFactors = FALSE),
+                           conditions = list(),
+                           selected = NULL,
+                           cond_id = 1)
   
   volumes <- c(Home = fs::path_home(), Working = getwd())
   shinyFileSave(input, "save_code_btn", roots = volumes, session = session)
   
   observeEvent(input$add_arm, {
-    label <- input$new_arm
-    id <- paste0("arm_", label)
-    if (nzchar(label) && !(label %in% arms$labels)) {
-      insertTab("main_tabs", tabPanel(label, armModuleUI(id)), target = "Code", position = "before", select = TRUE)
-      arms$labels <- c(arms$labels, label)
-      arms$modules[[label]] <- armModuleServer(id, label)
+    if (nzchar(input$arm_label)) {
+      arms$data <- rbind(arms$data, data.frame(Label = input$arm_label, Ratio = input$arm_ratio))
+      arms$endpoints[[input$arm_label]] <- data.frame(Name = character(), Type = character(), Readout = character(),
+                                                      Generator = character(), Args = character(), stringsAsFactors = FALSE)
+    }
+  })
+  
+  output$arm_table <- renderDT({
+    datatable(arms$data, selection = "single", editable = FALSE)
+  })
+  
+  observe({
+    sel <- input$arm_table_rows_selected
+    if (length(sel) > 0) {
+      arms$selected <- arms$data$Label[sel]
+    } else {
+      arms$selected <- NULL
+    }
+  })
+  
+  observeEvent(input$add_ep, {
+    sel <- arms$selected
+    if (!is.null(sel)) {
+      df <- arms$endpoints[[sel]]
+      df <- rbind(df, data.frame(Name = input$ep_name, Type = input$ep_type, Readout = input$ep_readout,
+                                 Generator = input$ep_generator, Args = input$ep_args))
+      arms$endpoints[[sel]] <- df
+    }
+  })
+  
+  output$endpoint_table <- renderDT({
+    sel <- arms$selected
+    if (!is.null(sel)) {
+      datatable(arms$endpoints[[sel]], selection = "single")
+    }
+  })
+  
+  observeEvent(input$delete_ep, {
+    sel <- arms$selected
+    ep_row <- input$endpoint_table_rows_selected
+    if (!is.null(sel) && length(ep_row) > 0) {
+      df <- arms$endpoints[[sel]]
+      df <- df[-ep_row, ]
+      arms$endpoints[[sel]] <- df
     }
   })
   
   observeEvent(input$add_event, {
-    name <- input$new_event_name
-    if (nzchar(name) && !(name %in% names(events$all))) {
-      updateTabsetPanel(session, "main_tabs", selected = "Events")
-      events$all[[name]] <- reactiveValues(
-        name = name,
-        logic = "",
-        conditions = list(),
-        id_counter = 1
-      )
+    if (nzchar(input$new_event_name)) {
+      events$data <- rbind(events$data, data.frame(Name = input$new_event_name, Logic = "", stringsAsFactors = FALSE))
+      events$conditions[[input$new_event_name]] <- list()
     }
   })
   
-  output$events_ui <- renderUI({
-    tagList(
-      lapply(names(events$all), function(e_name) {
-        ev <- events$all[[e_name]]
-        ns <- NS(e_name)
-        cond_ui <- lapply(names(ev$conditions), function(id) {
-          cond <- ev$conditions[[id]]
-          fluidRow(
-            column(2, strong(id)),
-            column(2, cond$type),
-            column(2, cond$endpoint),
-            column(2, cond$arms),
-            column(2, ifelse(cond$type == "calendar", paste("Time:", cond$time), paste("N:", cond$n))),
-            column(2, actionButton(ns(paste0("del_", id)), "X", class = "btn-danger btn-sm"))
-          )
-        })
-        tagList(
-          h4(glue("Event: {e_name}")),
-          fluidRow(
-            column(3, selectInput(ns("type"), "Type", c("calendar", "enrollment", "event"))),
-            column(3, textInput(ns("endpoint"), "Endpoint")),
-            column(3, textInput(ns("arms"), "Arms")),
-            column(3, numericInput(ns("value"), "N or Time", 0))
-          ),
-          actionButton(ns("add_condition"), "Add Condition"),
-          br(),
-          do.call(tagList, cond_ui),
-          textInput(ns("logic_input"), "Logic (e.g., A and B)", value = isolate(ev$logic)),
-          actionButton(ns("delete_event"), "Delete Event", class = "btn-warning"),
-          hr()
-        )
-      })
-    )
+  output$event_table <- renderDT({
+    datatable(events$data, selection = "single")
   })
   
   observe({
-    lapply(names(events$all), function(e_name) {
-      ns <- function(x) paste0(e_name, "-", x)
-      ev <- events$all[[e_name]]
+    sel <- input$event_table_rows_selected
+    if (length(sel) > 0) {
+      events$selected <- events$data$Name[sel]
+    } else {
+      events$selected <- NULL
+    }
+  })
+  
+  observeEvent(input$add_condition, {
+    name <- events$selected
+    if (!is.null(name)) {
+      id <- LETTERS[events$cond_id]
+      cond <- list(
+        type = input$cond_type,
+        endpoint = input$cond_endpoint,
+        arms = input$cond_arms
+      )
+      if (input$cond_type == "calendar") {
+        cond$time <- input$cond_value
+      } else {
+        cond$n <- input$cond_value
+      }
+      events$conditions[[name]][[id]] <- cond
+      events$cond_id <- events$cond_id + 1
       
-      observeEvent(input[[ns("add_condition")]], {
-        id <- LETTERS[ev$id_counter]
-        typ <- input[[ns("type")]]
-        endpoint <- input[[ns("endpoint")]]
-        arms <- input[[ns("arms")]]
-        val <- input[[ns("value")]]
-        cond <- list(type = typ, endpoint = endpoint, arms = arms)
-        if (typ == "calendar") cond$time <- val else cond$n <- val
-        ev$conditions[[id]] <- cond
-        ev$id_counter <- ev$id_counter + 1
-      })
-      
-      observeEvent(input[[ns("logic_input")]], {
-        ev$logic <- input[[ns("logic_input")]]
-      }, ignoreInit = FALSE)
-      
-      observe({
-        lapply(names(ev$conditions), function(id) {
-          observeEvent(input[[ns(paste0("del_", id))]], {
-            ev$conditions[[id]] <- NULL
-          }, ignoreInit = TRUE)
-        })
-      })
-      
-      observeEvent(input[[ns("delete_event")]], {
-        events$all[[e_name]] <- NULL
-      }, ignoreInit = TRUE)
-    })
+      ix <- which(events$data$Name == name)
+      events$data$Logic[ix] <- input$event_logic
+    }
+  })
+  
+  output$condition_table <- renderDT({
+    name <- events$selected
+    if (!is.null(name)) {
+      conds <- events$conditions[[name]]
+      df <- do.call(rbind, lapply(names(conds), function(id) {
+        cbind(ID = id, as.data.frame(conds[[id]], stringsAsFactors = FALSE))
+      }))
+      datatable(df)
+    }
+  })
+  
+  observeEvent(input$delete_event, {
+    name <- events$selected
+    if (!is.null(name)) {
+      events$data <- events$data[events$data$Name != name, ]
+      events$conditions[[name]] <- NULL
+      events$selected <- NULL
+    }
   })
   
   reactiveCode <- reactive({
-    arm_code <- lapply(arms$modules, function(mod) {
-      dat <- mod()
-      eps <- dat$endpoints
-      ep_code <- vapply(eps, function(ep) {
-        glue("define_endpoint(name = '{ep$name}', type = '{ep$type}', readout = '{ep$readout}', generator = '{ep$generator}', args = '{ep$generator_args}')")
-      }, character(1))
-      glue("define_arm(name = '{dat$name}', label = '{dat$label}', ratio = {dat$ratio}, endpoints = list(
+    arm_code <- mapply(function(label, ratio) {
+      eps <- arms$endpoints[[label]]
+      ep_code <- apply(eps, 1, function(ep) {
+        glue("define_endpoint(name = '{ep[1]}', type = '{ep[2]}', readout = '{ep[3]}', generator = '{ep[4]}', args = '{ep[5]}')")
+      })
+      glue("define_arm(name = '{label}', label = '{label}', ratio = {ratio}, endpoints = list(
   {paste(ep_code, collapse = ',\n  ')}
 ))")
-    })
+    }, arms$data$Label, arms$data$Ratio, SIMPLIFY = FALSE)
     
-    event_code <- lapply(events$all, function(ev) {
-      cond_lines <- vapply(names(ev$conditions), function(id) {
-        cond <- ev$conditions[[id]]
+    event_code <- apply(events$data, 1, function(row) {
+      name <- row["Name"]
+      logic <- row["Logic"]
+      conds <- events$conditions[[name]]
+      cond_lines <- mapply(function(id, cond) {
         common <- glue("type = '{cond$type}', endpoint = '{cond$endpoint}', arms = '{cond$arms}'")
         extra <- if (cond$type == "calendar") glue("time = {cond$time}") else glue("n = {cond$n}")
         glue("{id} = define_condition({common}, {extra})")
-      }, character(1))
-      glue("define_event(name = '{ev$name}', logic = '{ev$logic}', conditions = list(
+      }, names(conds), conds, SIMPLIFY = TRUE)
+      glue("define_event(name = '{name}', logic = '{logic}', conditions = list(
   {paste(cond_lines, collapse = ',\n  ')}
 ))")
     })
