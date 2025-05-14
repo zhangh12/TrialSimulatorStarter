@@ -8,6 +8,7 @@ armModuleUI <- function(id) {
   ns <- NS(id)
   tagList(
     textInput(ns("label"), "Arm Label"),
+    numericInput(ns("ratio"), "Randomization Ratio", value = 1, min = 0.1),
     uiOutput(ns("endpoint_selector")),
     textInput(ns("endpoint_name"), "Endpoint Name"),
     textInput(ns("endpoint_type"), "Endpoint Type"),
@@ -76,7 +77,12 @@ armModuleServer <- function(id, label) {
     })
     
     return(reactive({
-      list(name = label, label = input$label, endpoints = state$endpoints)
+      list(
+        name = label,
+        label = input$label,
+        ratio = input$ratio,
+        endpoints = state$endpoints
+      )
     }))
   })
 }
@@ -94,13 +100,16 @@ ui <- fluidPage(
     ),
     mainPanel(
       tabsetPanel(id = "main_tabs",
-                  tabPanel("Code", verbatimTextOutput("code_preview")),
                   tabPanel("Trial",
                            textInput("trial_name", "Trial Name"),
-                           dateInput("trial_start", "Start Date"),
-                           numericInput("trial_n", "Max Sample Size", value = 1000)
+                           numericInput("trial_n", "Patient Number", value = 1000),
+                           numericInput("trial_duration", "Trial Duration", value = 52),
+                           textInput("recruitment_arg", "Recruitment Argument"),
+                           textInput("dropout", "Dropout"),
+                           textInput("dropout_arg", "Dropout Argument")
                   ),
-                  tabPanel("Events", uiOutput("events_ui"))
+                  tabPanel("Events", uiOutput("events_ui")),
+                  tabPanel("Code", verbatimTextOutput("code_preview"), value = "Code")
       )
     )
   )
@@ -118,7 +127,7 @@ server <- function(input, output, session) {
     label <- input$new_arm
     id <- paste0("arm_", label)
     if (nzchar(label) && !(label %in% arms$labels)) {
-      insertTab("main_tabs", tabPanel(label, armModuleUI(id)), target = "Code", position = "before")
+      insertTab("main_tabs", tabPanel(label, armModuleUI(id)), target = "Code", position = "before", select = TRUE)
       arms$labels <- c(arms$labels, label)
       arms$modules[[label]] <- armModuleServer(id, label)
     }
@@ -127,6 +136,7 @@ server <- function(input, output, session) {
   observeEvent(input$add_event, {
     name <- input$new_event_name
     if (nzchar(name) && !(name %in% names(events$all))) {
+      updateTabsetPanel(session, "main_tabs", selected = "Events")
       events$all[[name]] <- reactiveValues(
         name = name,
         logic = "",
@@ -213,7 +223,7 @@ server <- function(input, output, session) {
       ep_code <- vapply(eps, function(ep) {
         glue("define_endpoint(name = '{ep$name}', type = '{ep$type}', readout = '{ep$readout}', generator = '{ep$generator}', args = '{ep$generator_args}')")
       }, character(1))
-      glue("define_arm(name = '{dat$name}', label = '{dat$label}', endpoints = list(
+      glue("define_arm(name = '{dat$name}', label = '{dat$label}', ratio = {dat$ratio}, endpoints = list(
   {paste(ep_code, collapse = ',\n  ')}
 ))")
     })
@@ -230,7 +240,7 @@ server <- function(input, output, session) {
 ))")
     })
     
-    trial_code <- glue("define_trial(name = '{input$trial_name}', start_date = '{input$trial_start}', max_sample_size = {input$trial_n})")
+    trial_code <- glue("define_trial(name = '{input$trial_name}', patients = {input$trial_n}, duration = {input$trial_duration}, enroller = '{input$recruitment_arg}', dropout = '{input$dropout}', dropout_args = '{input$dropout_arg}')")
     
     paste(c(arm_code, event_code, trial_code), collapse = "\n\n")
   })
