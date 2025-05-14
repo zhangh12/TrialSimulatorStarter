@@ -5,26 +5,23 @@ library(glue)
 armModuleUI <- function(id) {
   ns <- NS(id)
   tagList(
-    textInput(ns("dose"), "Dose"),
-    hr(),
-    h4("Endpoints"),
+    textInput(ns("label"), "Arm Label"),
     uiOutput(ns("endpoint_selector")),
     textInput(ns("endpoint_name"), "Endpoint Name"),
     textInput(ns("endpoint_type"), "Endpoint Type"),
-    textInput(ns("endpoint_unit"), "Endpoint Unit"),
-    actionButton(ns("add_endpoint"), "➕ Add / Update Endpoint"),
-    actionButton(ns("delete_endpoint"), "🗑️ Delete Endpoint")
+    textInput(ns("endpoint_readout"), "Readout"),
+    textInput(ns("endpoint_generator"), "Generator"),
+    textAreaInput(ns("endpoint_args"), "Generator Arguments", rows = 3),
+    actionButton(ns("add_endpoint"), "Add Endpoint"),
+    actionButton(ns("delete_endpoint"), "Delete Endpoint")
   )
 }
 
 # ---- Arm Module Server ----
 armModuleServer <- function(id, label) {
   moduleServer(id, function(input, output, session) {
+    state <- reactiveValues(endpoints = list(), selected = NULL)
     ns <- session$ns
-    state <- reactiveValues(
-      endpoints = list(),
-      selected_ep = NULL
-    )
     
     observeEvent(input$add_endpoint, {
       name <- input$endpoint_name
@@ -32,117 +29,214 @@ armModuleServer <- function(id, label) {
         state$endpoints[[name]] <- list(
           name = name,
           type = input$endpoint_type,
-          unit = input$endpoint_unit
+          readout = input$endpoint_readout,
+          generator = input$endpoint_generator,
+          generator_args = input$endpoint_args
         )
-        state$selected_ep <- name
+        state$selected <- name
+        
+        # 清空所有输入
+        updateTextInput(session, "endpoint_name", value = "")
+        updateTextInput(session, "endpoint_type", value = "")
+        updateTextInput(session, "endpoint_readout", value = "")
+        updateTextInput(session, "endpoint_generator", value = "")
+        updateTextAreaInput(session, "endpoint_args", value = "")
       }
     })
     
     observeEvent(input$delete_endpoint, {
-      ep <- state$selected_ep
+      ep <- state$selected
       if (!is.null(ep)) {
         state$endpoints[[ep]] <- NULL
-        state$selected_ep <- NULL
+        state$selected <- NULL
         updateTextInput(session, "endpoint_name", value = "")
         updateTextInput(session, "endpoint_type", value = "")
-        updateTextInput(session, "endpoint_unit", value = "")
+        updateTextInput(session, "endpoint_readout", value = "")
+        updateTextInput(session, "endpoint_generator", value = "")
+        updateTextAreaInput(session, "endpoint_args", value = "")
       }
     })
     
     observeEvent(input$endpoint_selector, {
       ep <- input$endpoint_selector
-      if (nzchar(ep) && ep %in% names(state$endpoints)) {
-        endpoint <- state$endpoints[[ep]]
-        updateTextInput(session, "endpoint_name", value = endpoint$name)
-        updateTextInput(session, "endpoint_type", value = endpoint$type)
-        updateTextInput(session, "endpoint_unit", value = endpoint$unit)
-        state$selected_ep <- ep
+      if (!is.null(ep) && ep %in% names(state$endpoints)) {
+        ep_data <- state$endpoints[[ep]]
+        updateTextInput(session, "endpoint_name", value = ep_data$name)
+        updateTextInput(session, "endpoint_type", value = ep_data$type)
+        updateTextInput(session, "endpoint_readout", value = ep_data$readout)
+        updateTextInput(session, "endpoint_generator", value = ep_data$generator)
+        updateTextAreaInput(session, "endpoint_args", value = ep_data$generator_args)
+        state$selected <- ep
       }
     })
     
     output$endpoint_selector <- renderUI({
       if (length(state$endpoints) == 0) return(NULL)
-      selectInput(ns("endpoint_selector"), "Select Endpoint:", choices = names(state$endpoints), selected = state$selected_ep)
+      selectInput(ns("endpoint_selector"), "Select Endpoint", choices = names(state$endpoints), selected = state$selected)
     })
     
     return(reactive({
-      list(
-        name = label,
-        dose = input$dose,
-        endpoints = isolate(state$endpoints)
-      )
+      list(name = label, label = input$label, endpoints = state$endpoints)
     }))
   })
 }
 
-# ---- Main App ----
+# ---- UI ----
 ui <- fluidPage(
-  titlePanel("Modular Clinical Trial Designer"),
+  titlePanel("Modular Trial Designer"),
   sidebarLayout(
     sidebarPanel(
       textInput("new_arm", "New Arm Name"),
       actionButton("add_arm", "➕ Add Arm"),
-      uiOutput("arm_removal_ui")
+      textInput("new_event_name", "New Event Name"),
+      actionButton("add_event", "➕ Add Event")
     ),
     mainPanel(
-      tabsetPanel(id = "arm_tabs",
-                  tabPanel("Code", value = "code_tab", h3("Generated Code"), verbatimTextOutput("combined_code"))
+      tabsetPanel(id = "main_tabs",
+                  tabPanel("Code", verbatimTextOutput("code_preview")),
+                  tabPanel("Trial",
+                           textInput("trial_name", "Trial Name"),
+                           dateInput("trial_start", "Start Date"),
+                           numericInput("trial_n", "Max Sample Size", value = 1000)
+                  ),
+                  tabPanel("Events",
+                           uiOutput("events_ui")
+                  )
       )
     )
   )
 )
-
+# ---- Server ----
 server <- function(input, output, session) {
-  arm_list <- reactiveValues(labels = character(), modules = list())
+  arms <- reactiveValues(labels = character(), modules = list())
+  events <- reactiveValues(all = list())
   
-  # ---- Add Arm ----
+  # Add new Arm
   observeEvent(input$add_arm, {
     label <- input$new_arm
     id <- paste0("arm_", label)
-    if (nzchar(label) && !(label %in% arm_list$labels)) {
-      insertTab("arm_tabs",
-                tabPanel(title = label, value = id, armModuleUI(id)),
-                target = "code_tab", position = "before", select = TRUE
-      )
-      arm_list$labels <- c(arm_list$labels, label)
-      arm_list$modules[[label]] <- armModuleServer(id = id, label = label)
+    if (nzchar(label) && !(label %in% arms$labels)) {
+      insertTab("main_tabs", tabPanel(label, armModuleUI(id)), target = "Code", position = "before")
+      arms$labels <- c(arms$labels, label)
+      arms$modules[[label]] <- armModuleServer(id, label)
     }
   })
   
-  # ---- Remove Arm UI ----
-  output$arm_removal_ui <- renderUI({
-    if (length(arm_list$labels) == 0) return(NULL)
+  # Add new Event
+  observeEvent(input$add_event, {
+    name <- input$new_event_name
+    if (nzchar(name) && !(name %in% names(events$all))) {
+      events$all[[name]] <- reactiveValues(
+        name = name,
+        logic = "",
+        conditions = list(),
+        id_counter = 1
+      )
+    }
+  })
+  # Render all events
+  output$events_ui <- renderUI({
     tagList(
-      selectInput("remove_arm", "Select Arm to Remove", choices = arm_list$labels),
-      actionButton("delete_arm", "🗑️ Remove Selected Arm")
+      lapply(names(events$all), function(e_name) {
+        ev <- events$all[[e_name]]
+        ns <- NS(e_name)
+        
+        cond_ui <- lapply(names(ev$conditions), function(id) {
+          cond <- ev$conditions[[id]]
+          fluidRow(
+            column(2, strong(id)),
+            column(2, cond$type),
+            column(2, cond$endpoint),
+            column(2, cond$arms),
+            column(2, ifelse(cond$type == "calendar", paste("Time:", cond$time), paste("N:", cond$n))),
+            column(2, actionButton(ns(paste0("del_", id)), "X", class = "btn-danger btn-sm"))
+          )
+        })
+        
+        tagList(
+          h4(glue("Event: {e_name}")),
+          fluidRow(
+            column(3, selectInput(ns("type"), "Type", c("calendar", "enrollment", "event"))),
+            column(3, textInput(ns("endpoint"), "Endpoint")),
+            column(3, textInput(ns("arms"), "Arms")),
+            column(3, numericInput(ns("value"), "N or Time", 0))
+          ),
+          actionButton(ns("add_condition"), "Add Condition"),
+          br(),
+          do.call(tagList, cond_ui),
+          textInput(ns("logic_input"), "Logic (e.g., A and B)", value = isolate(ev$logic)),
+          actionButton(ns("delete_event"), "Delete Event", class = "btn-warning"),
+          hr()
+        )
+      })
     )
   })
-  
-  # ---- Delete Arm ----
-  observeEvent(input$delete_arm, {
-    label <- input$remove_arm
-    id <- paste0("arm_", label)
-    if (!is.null(label) && label %in% arm_list$labels) {
-      removeTab("arm_tabs", target = id)
-      arm_list$labels <- setdiff(arm_list$labels, label)
-      arm_list$modules[[label]] <- NULL
-    }
+  # 监听每个 event 的操作
+  observe({
+    lapply(names(events$all), function(e_name) {
+      ns <- function(x) paste0(e_name, "-", x)
+      ev <- events$all[[e_name]]
+      
+      # 添加条件
+      observeEvent(input[[ns("add_condition")]], {
+        id <- LETTERS[ev$id_counter]
+        typ <- input[[ns("type")]]
+        endpoint <- input[[ns("endpoint")]]
+        arms <- input[[ns("arms")]]
+        val <- input[[ns("value")]]
+        cond <- list(type = typ, endpoint = endpoint, arms = arms)
+        if (typ == "calendar") cond$time <- val else cond$n <- val
+        ev$conditions[[id]] <- cond
+        ev$id_counter <- ev$id_counter + 1
+      })
+      
+      # 更新逻辑表达式
+      observeEvent(input[[ns("logic_input")]], {
+        ev$logic <- input[[ns("logic_input")]]
+      }, ignoreInit = FALSE)
+      
+      # 删除条件按钮绑定
+      observe({
+        lapply(names(ev$conditions), function(id) {
+          observeEvent(input[[ns(paste0("del_", id))]], {
+            ev$conditions[[id]] <- NULL
+          }, ignoreInit = TRUE)
+        })
+      })
+      
+      # 删除整个事件
+      observeEvent(input[[ns("delete_event")]], {
+        events$all[[e_name]] <- NULL
+      }, ignoreInit = TRUE)
+    })
   })
-  
-  # ---- Combined Code ----
-  output$combined_code <- renderText({
-    codes <- lapply(arm_list$modules, function(mod) {
+  # ---- Code Output ----
+  output$code_preview <- renderText({
+    arm_code <- lapply(arms$modules, function(mod) {
       dat <- mod()
       eps <- dat$endpoints
-      ep_code <- if (length(eps) == 0) "" else {
-        vapply(eps, function(ep) {
-          glue("define_endpoint(name = '{ep$name}', type = '{ep$type}', unit = '{ep$unit}')")
-        }, character(1))
-      }
-      glue("define_arm(name = '{dat$name}', dose = '{dat$dose}', endpoints = list(\n  {paste(ep_code, collapse = ',\n  ')}\n))")
+      ep_code <- vapply(eps, function(ep) {
+        glue("define_endpoint(name = '{ep$name}', type = '{ep$type}', readout = '{ep$readout}', generator = '{ep$generator}', args = '{ep$generator_args}')")
+      }, character(1))
+      
+      glue("define_arm(name = '{dat$name}', label = '{dat$label}', endpoints = list(\n  {paste(ep_code, collapse = ',\n  ')}\n))")
     })
-    paste(codes, collapse = "\n\n")
+    
+    event_code <- lapply(events$all, function(ev) {
+      cond_lines <- vapply(names(ev$conditions), function(id) {
+        cond <- ev$conditions[[id]]
+        common <- glue("type = '{cond$type}', endpoint = '{cond$endpoint}', arms = '{cond$arms}'")
+        extra <- if (cond$type == "calendar") glue("time = {cond$time}") else glue("n = {cond$n}")
+        glue("{id} = define_condition({common}, {extra})")
+      }, "")
+      glue("define_event(name = '{ev$name}', logic = '{ev$logic}', conditions = list(\n  {paste(cond_lines, collapse = ',\\n  ')}\n))")
+    })
+    
+    trial_code <- glue("define_trial(name = '{input$trial_name}', start_date = '{input$trial_start}', max_sample_size = {input$trial_n})")
+    
+    paste(c(arm_code, event_code, trial_code), collapse = "\n\n")
   })
 }
 
+# ---- Run App ----
 shinyApp(ui, server)
