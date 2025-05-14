@@ -6,7 +6,7 @@ This Shiny app enables users of the R package `TrialSimulator` to generate R cod
 
 This app is still under development and is not ready for use. 
 
-This app is hosted on [shinyapps.io](https://bx7ttm-han-zhang.shinyapps.io/trialsimulatorstarter/). 
+An online version of this app is hosted on [shinyapps.io](https://bx7ttm-han-zhang.shinyapps.io/trialsimulatorstarter/). 
 
 To launch this app on your computer, clone this repo and execute
 ``` r
