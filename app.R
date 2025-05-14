@@ -1,5 +1,7 @@
 library(shiny)
 library(glue)
+library(shinyFiles)
+library(fs)
 
 # ---- Arm Module UI ----
 armModuleUI <- function(id) {
@@ -34,8 +36,6 @@ armModuleServer <- function(id, label) {
           generator_args = input$endpoint_args
         )
         state$selected <- name
-        
-        # 清空所有输入
         updateTextInput(session, "endpoint_name", value = "")
         updateTextInput(session, "endpoint_type", value = "")
         updateTextInput(session, "endpoint_readout", value = "")
@@ -89,7 +89,8 @@ ui <- fluidPage(
       textInput("new_arm", "New Arm Name"),
       actionButton("add_arm", "➕ Add Arm"),
       textInput("new_event_name", "New Event Name"),
-      actionButton("add_event", "➕ Add Event")
+      actionButton("add_event", "➕ Add Event"),
+      shinySaveButton("save_code_btn", "💾 Save Code to File", "Save Code As...", filetype = list(R = "R"))
     ),
     mainPanel(
       tabsetPanel(id = "main_tabs",
@@ -99,19 +100,20 @@ ui <- fluidPage(
                            dateInput("trial_start", "Start Date"),
                            numericInput("trial_n", "Max Sample Size", value = 1000)
                   ),
-                  tabPanel("Events",
-                           uiOutput("events_ui")
-                  )
+                  tabPanel("Events", uiOutput("events_ui"))
       )
     )
   )
 )
+
 # ---- Server ----
 server <- function(input, output, session) {
   arms <- reactiveValues(labels = character(), modules = list())
   events <- reactiveValues(all = list())
   
-  # Add new Arm
+  volumes <- c(Home = fs::path_home(), Working = getwd())
+  shinyFileSave(input, "save_code_btn", roots = volumes, session = session)
+  
   observeEvent(input$add_arm, {
     label <- input$new_arm
     id <- paste0("arm_", label)
@@ -122,7 +124,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # Add new Event
   observeEvent(input$add_event, {
     name <- input$new_event_name
     if (nzchar(name) && !(name %in% names(events$all))) {
@@ -134,13 +135,12 @@ server <- function(input, output, session) {
       )
     }
   })
-  # Render all events
+  
   output$events_ui <- renderUI({
     tagList(
       lapply(names(events$all), function(e_name) {
         ev <- events$all[[e_name]]
         ns <- NS(e_name)
-        
         cond_ui <- lapply(names(ev$conditions), function(id) {
           cond <- ev$conditions[[id]]
           fluidRow(
@@ -152,7 +152,6 @@ server <- function(input, output, session) {
             column(2, actionButton(ns(paste0("del_", id)), "X", class = "btn-danger btn-sm"))
           )
         })
-        
         tagList(
           h4(glue("Event: {e_name}")),
           fluidRow(
@@ -171,13 +170,12 @@ server <- function(input, output, session) {
       })
     )
   })
-  # 监听每个 event 的操作
+  
   observe({
     lapply(names(events$all), function(e_name) {
       ns <- function(x) paste0(e_name, "-", x)
       ev <- events$all[[e_name]]
       
-      # 添加条件
       observeEvent(input[[ns("add_condition")]], {
         id <- LETTERS[ev$id_counter]
         typ <- input[[ns("type")]]
@@ -190,12 +188,10 @@ server <- function(input, output, session) {
         ev$id_counter <- ev$id_counter + 1
       })
       
-      # 更新逻辑表达式
       observeEvent(input[[ns("logic_input")]], {
         ev$logic <- input[[ns("logic_input")]]
       }, ignoreInit = FALSE)
       
-      # 删除条件按钮绑定
       observe({
         lapply(names(ev$conditions), function(id) {
           observeEvent(input[[ns(paste0("del_", id))]], {
@@ -204,22 +200,22 @@ server <- function(input, output, session) {
         })
       })
       
-      # 删除整个事件
       observeEvent(input[[ns("delete_event")]], {
         events$all[[e_name]] <- NULL
       }, ignoreInit = TRUE)
     })
   })
-  # ---- Code Output ----
-  output$code_preview <- renderText({
+  
+  reactiveCode <- reactive({
     arm_code <- lapply(arms$modules, function(mod) {
       dat <- mod()
       eps <- dat$endpoints
       ep_code <- vapply(eps, function(ep) {
         glue("define_endpoint(name = '{ep$name}', type = '{ep$type}', readout = '{ep$readout}', generator = '{ep$generator}', args = '{ep$generator_args}')")
       }, character(1))
-      
-      glue("define_arm(name = '{dat$name}', label = '{dat$label}', endpoints = list(\n  {paste(ep_code, collapse = ',\n  ')}\n))")
+      glue("define_arm(name = '{dat$name}', label = '{dat$label}', endpoints = list(
+  {paste(ep_code, collapse = ',\n  ')}
+))")
     })
     
     event_code <- lapply(events$all, function(ev) {
@@ -228,15 +224,28 @@ server <- function(input, output, session) {
         common <- glue("type = '{cond$type}', endpoint = '{cond$endpoint}', arms = '{cond$arms}'")
         extra <- if (cond$type == "calendar") glue("time = {cond$time}") else glue("n = {cond$n}")
         glue("{id} = define_condition({common}, {extra})")
-      }, "")
-      glue("define_event(name = '{ev$name}', logic = '{ev$logic}', conditions = list(\n  {paste(cond_lines, collapse = ',\\n  ')}\n))")
+      }, character(1))
+      glue("define_event(name = '{ev$name}', logic = '{ev$logic}', conditions = list(
+  {paste(cond_lines, collapse = ',\n  ')}
+))")
     })
     
     trial_code <- glue("define_trial(name = '{input$trial_name}', start_date = '{input$trial_start}', max_sample_size = {input$trial_n})")
     
     paste(c(arm_code, event_code, trial_code), collapse = "\n\n")
   })
+  
+  output$code_preview <- renderText({ reactiveCode() })
+  
+  observeEvent(input$save_code_btn, {
+    fileinfo <- parseSavePath(volumes, input$save_code_btn)
+    if (nrow(fileinfo) > 0) {
+      filepath <- as.character(fileinfo$datapath)
+      code <- isolate(reactiveCode())
+      writeLines(code, filepath)
+      showModal(modalDialog("R code saved successfully.", easyClose = TRUE))
+    }
+  })
 }
 
-# ---- Run App ----
 shinyApp(ui, server)
