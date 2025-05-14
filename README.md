@@ -1,5 +1,7 @@
 # Shiny App for `TrialSimulator` <img src="logo.png" align="right" width="175" />
 
+**&#x2695; No more `for` loop in clinical trial simulation &#x2695;**
+
 This Shiny app enables users of the R package `TrialSimulator` to generate R codes for simulation by specifying simulation settings from UI. 
 
 ## Installation
