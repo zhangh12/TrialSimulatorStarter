@@ -122,11 +122,50 @@ server_trial_events <- function(input, output, session, vals) {
   output$trial_event_buttons_ui <- renderUI({
     if (length(vals$trial_events) == 0) return(NULL)
     fluidRow(
-      column(6, actionButton("view_trial_event", "🔍 View Conditions", width = "100%")),
-      column(6, actionButton("delete_trial_event", "🗑️ Delete Trial Event", width = "100%"))
+      column(6, actionButton("move_up_trial_event", "⬆️ Move Up", width = "100%")),
+      column(6, actionButton("move_down_trial_event", "⬇️ Move Down", width = "100%")),
+      column(6, actionButton("view_trial_event", "🔍 View Trial Event", width = "100%", style = "margin-top: 10px;")),
+      column(6, actionButton("delete_trial_event", "🗑️ Delete Trial Event", width = "100%", style = "margin-top: 10px;"))
     )
   })
   
+  # Move Up
+  observeEvent(input$move_up_trial_event, {
+    selected <- input$trial_event_table_rows_selected
+    if (length(selected) != 1 || selected == 1) return()
+    
+    ids <- names(vals$trial_events)
+    idx <- selected
+    new_order <- append(ids[-c(idx - 1, idx)], ids[c(idx, idx - 1)], after = idx - 2)
+    vals$trial_events <- vals$trial_events[new_order]
+    
+    # Restore selection
+    proxy <- dataTableProxy("trial_event_table")
+    replaceData(proxy, bind_rows(lapply(vals$trial_events, function(event) {
+      data.frame(Name = event$name, Conditions = length(event$conditions), stringsAsFactors = FALSE)
+    })), resetPaging = FALSE)
+    selectRows(proxy, idx - 1)
+  })
+  
+  # Move Down
+  observeEvent(input$move_down_trial_event, {
+    selected <- input$trial_event_table_rows_selected
+    if (length(selected) != 1 || selected == length(vals$trial_events)) return()
+    
+    ids <- names(vals$trial_events)
+    idx <- selected
+    new_order <- append(ids[-c(idx, idx + 1)], ids[c(idx + 1, idx)], after = idx - 1)
+    vals$trial_events <- vals$trial_events[new_order]
+    
+    # Restore selection
+    proxy <- dataTableProxy("trial_event_table")
+    replaceData(proxy, bind_rows(lapply(vals$trial_events, function(event) {
+      data.frame(Name = event$name, Conditions = length(event$conditions), stringsAsFactors = FALSE)
+    })), resetPaging = FALSE)
+    selectRows(proxy, idx + 1)
+  })
+  
+  # view an event
   observeEvent(input$view_trial_event, {
     selected <- input$trial_event_table_rows_selected
     if (length(selected) == 0) return()
@@ -140,6 +179,7 @@ server_trial_events <- function(input, output, session, vals) {
     ))
   })
   
+  # delete an event
   observeEvent(input$delete_trial_event, {
     selected <- input$trial_event_table_rows_selected
     if (length(selected) == 0) return()

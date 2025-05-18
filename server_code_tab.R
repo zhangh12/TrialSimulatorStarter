@@ -36,7 +36,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     })
     
     final_code <- paste(codes, collapse = "\n\n")
-    event_names <- paste(sapply(vals$trial_events, function(event) gsub("\\s+", "_", event$name)), collapse = ",")
+    event_names <- paste(sapply(vals$trial_events, function(event) gsub("\\s+", "_", event$name)), collapse = ", ")
     final_code <- glue::glue("{final_code}\n\n",
                              "listener <- listener()\n",
                              "listener$add_events({event_names})\n\n",

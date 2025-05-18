@@ -1,7 +1,3 @@
-library(shiny)
-library(DT)
-library(shinyAce)
-library(rclipboard)
 
 ui <- fluidPage(
   
@@ -22,6 +18,45 @@ ui <- fluidPage(
   
   # ---- Main Content Tabs ----
   tabsetPanel(
+    
+    # ---- Arm Tab ----
+    tabPanel("Arm",
+             fluidRow(
+               column(3,
+                      wellPanel(
+                        
+                        # Arm Info (top)
+                        textInput("arm_label", "Arm Label"),
+                        textInput("arm_ratio", "Randomization Ratio"),
+                        
+                        # Endpoint Builder
+                        hr(),
+                        textInput("ep_name", "Endpoint Name"),
+                        textInput("ep_type", "Endpoint Type"),
+                        textInput("ep_readout", "Readout"),
+                        textInput("ep_generator", "Generator"),
+                        textAreaInput("ep_args", "Generator Arguments", rows = 2),
+                        
+                        actionButton("add_ep", "➕"),
+                        actionButton("delete_ep", "🗑️"),
+                        
+                        # Arm Control
+                        hr(),
+                        actionButton("add_arm", "➕ Add Arm"),
+                        actionButton("duplicate_arm", "📄 Duplicate Arm"),
+                        actionButton("delete_arm", "🗑️ Delete Arm")
+                      )
+               ),
+               
+               column(9,
+                      h4("Pending Endpoints"),
+                      DTOutput("endpoint_table"),
+                      hr(),
+                      h4("Defined Arms"),
+                      DTOutput("arm_table")
+               )
+             )
+    ),
     
     # ---- Trial Event Tab ----
     tabPanel("Trial Event",
