@@ -33,10 +33,22 @@ server_arms <- function(input, output, session, vals) {
       tte_id <- paste0("is_tte_", i)
       readout_id <- paste0("readout_", i)
       
+      tte_value <- input[[tte_id]] %||% FALSE
+      readout_value <- input[[readout_id]] %||% ""
+      
+      readout_input <- tags$input(
+        id = readout_id,
+        type = "text",
+        class = "form-control",
+        value = if (isTRUE(tte_value)) "" else readout_value,
+        placeholder = "Readout",
+        disabled = if (isTRUE(tte_value)) "disabled" else NULL
+      )
+      
       fluidRow(
         column(4, div(ep_names[i], style = "margin-top: 6px;")),
-        column(2, checkboxInput(tte_id, label = NULL, value = FALSE)),
-        column(6, textInput(readout_id, label = NULL, value = "", placeholder = "Readout"))
+        column(2, checkboxInput(tte_id, label = NULL, value = tte_value)),
+        column(6, readout_input)
       )
     })
     
@@ -50,7 +62,7 @@ server_arms <- function(input, output, session, vals) {
     for (i in seq_along(vals$ep_table_raw)) {
       ep_name <- vals$ep_table_raw[i]
       is_tte <- input[[paste0("is_tte_", i)]] %||% FALSE
-      readout <- input[[paste0("readout_", i)]] %||% ""
+      readout <- if (!is_tte) input[[paste0("readout_", i)]] %||% "" else ""
       
       ep_id <- paste0("ep_", as.integer(Sys.time()), "_", i)
       vals$pending_endpoints[[ep_id]] <- list(
