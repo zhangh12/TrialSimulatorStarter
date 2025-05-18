@@ -31,9 +31,9 @@ ui <- fluidPage(
                         
                         # Endpoint Builder
                         hr(),
-                        textInput("ep_name", "Endpoint Name"),
-                        textInput("ep_type", "Endpoint Type"),
-                        textInput("ep_readout", "Readout"),
+                        textInput("ep_name", "Endpoint Name(s), comma-separated"),
+                        uiOutput("parsed_endpoint_ui"),
+                        
                         textInput("ep_generator", "Generator"),
                         textAreaInput("ep_args", "Generator Arguments", rows = 2),
                         
