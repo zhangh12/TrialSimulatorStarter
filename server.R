@@ -14,16 +14,23 @@ server <-
       req(input$load_config)
       
       tryCatch({
-        loaded <- jsonlite::read_json(input$load_config$datapath, simplifyVector = TRUE)
-        validate(
-          need(is.list(loaded), "Invalid configuration file format.")
-        )
+        path <- input$load_config$datapath
+        stopifnot(is.character(path), file.exists(path))  # Explicit sanity check
+        
+        loaded <- jsonlite::read_json(path, simplifyVector = FALSE)
+        
+        if (!is.list(loaded)) {
+          stop("Invalid configuration structure")
+        }
+        
         vals$trial_events <- loaded
-        showNotification("Config loaded successfully", type = "message")
+        showNotification("✅ Config loaded successfully", type = "message")
       }, error = function(e) {
-        showNotification(paste("Failed to load config:", e$message), type = "error")
+        showNotification(paste("❌ Failed to load config:", e$message), type = "error")
       })
     })
+    
+    
     
     output$save_config <- downloadHandler(
       filename = function() {
