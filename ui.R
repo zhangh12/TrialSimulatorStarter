@@ -51,6 +51,7 @@ ui <- fluidPage(
                column(9,
                       h4("Pending Endpoints"),
                       DTOutput("endpoint_table"),
+                      uiOutput("view_ep_ui"),
                       hr(),
                       h4("Defined Arms"),
                       DTOutput("arm_table")

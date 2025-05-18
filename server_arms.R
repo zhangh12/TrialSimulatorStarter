@@ -57,15 +57,25 @@ server_arms <- function(input, output, session, vals) {
   
   # ---- Add Endpoint(s) ----
   observeEvent(input$add_ep, {
-    req(vals$ep_table_raw)
+    
+    if (!nzchar(input$ep_name)) {
+      showNotification("Please specify at least one endpoint name.", type = "error")
+      return()
+    }
+    
+    if (!nzchar(input$ep_generator)) {
+      showNotification("Please specify a generator before adding.", type = "error")
+      return()
+    }
+    
     
     ep_names <- vals$ep_table_raw
     type_flags <- c()
     readout_map <- c()
     
     for (i in seq_along(ep_names)) {
-      is_tte <- input[[paste0("is_tte_", i)]] %||% FALSE
-      readout <- if (!is_tte) input[[paste0("readout_", i)]] %||% "" else ""
+      is_tte <- isolate(input[[paste0("is_tte_", i)]]) %||% FALSE
+      readout <- if (!is_tte) isolate(input[[paste0("readout_", i)]]) %||% "" else ""
       
       type_flags <- c(type_flags, if (is_tte) "tte" else "non-tte")
       
@@ -74,16 +84,25 @@ server_arms <- function(input, output, session, vals) {
       }
     }
     
-    ep_id <- paste0("ep_", as.integer(Sys.time()))
-    vals$pending_endpoints[[ep_id]] <- list(
-      name = paste(ep_names, collapse = ", "),
+    if (any(type_flags == "non-tte") && length(readout_map) < sum(type_flags == "non-tte")) {
+      showNotification("Please specify readout for all non-TTE endpoints", type = "error")
+      return()
+    }
+    
+    entry <- list(
+      name = sprintf("c(%s)", paste(shQuote(ep_names), collapse = ", ")),
       type = sprintf("c(%s)", paste(shQuote(type_flags), collapse = ", ")),
       readout = if (length(readout_map) > 0) sprintf("c(%s)", paste(readout_map, collapse = ", ")) else "",
-      generator = "",
-      args = ""
+      generator = input$ep_generator,
+      args = input$ep_args
     )
     
+    ep_id <- paste0("ep_", as.integer(Sys.time()))
+    vals$pending_endpoints[[ep_id]] <- entry
+    
     updateTextInput(session, "ep_name", value = "")
+    updateTextInput(session, "ep_generator", value = "")
+    updateTextInput(session, "ep_args", value = "")
     vals$ep_table_raw <- NULL
   })
   
@@ -159,4 +178,34 @@ server_arms <- function(input, output, session, vals) {
     df <- bind_rows(vals$pending_endpoints)
     datatable(df, selection = "single", rownames = FALSE)
   })
+  
+  # ---- Render View Endpoint Button ----
+  output$view_ep_ui <- renderUI({
+    if (length(vals$pending_endpoints) == 0) return(NULL)
+    actionButton("view_ep", "🔍 View Endpoint", width = "100%")
+  })
+  
+  # ---- View Endpoints ----
+  observeEvent(input$view_ep, {
+    selected <- input$endpoint_table_rows_selected
+    if (length(selected) != 1) return()
+    
+    ep_ids <- names(vals$pending_endpoints)
+    entry <- vals$pending_endpoints[[ep_ids[selected]]]
+    
+    showModal(modalDialog(
+      title = "Endpoint Details",
+      tagList(
+        strong("Endpoint Name:"), p(entry$name),
+        strong("Type:"), p(gsub("'", '"', entry$type)),
+        strong("Readout:"), p(gsub("'", '"', entry$readout %||% "")),
+        strong("Generator:"), p(entry$generator),
+        strong("Arguments:"), p(entry$args)
+      ),
+      easyClose = TRUE,
+      size = "l"
+    ))
+  })
+  
+  
 }
