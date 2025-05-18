@@ -59,21 +59,29 @@ server_arms <- function(input, output, session, vals) {
   observeEvent(input$add_ep, {
     req(vals$ep_table_raw)
     
-    for (i in seq_along(vals$ep_table_raw)) {
-      ep_name <- vals$ep_table_raw[i]
+    ep_names <- vals$ep_table_raw
+    type_flags <- c()
+    readout_map <- c()
+    
+    for (i in seq_along(ep_names)) {
       is_tte <- input[[paste0("is_tte_", i)]] %||% FALSE
       readout <- if (!is_tte) input[[paste0("readout_", i)]] %||% "" else ""
       
-      ep_id <- paste0("ep_", as.integer(Sys.time()), "_", i)
-      vals$pending_endpoints[[ep_id]] <- list(
-        name = ep_name,
-        type = "",
-        readout = readout,
-        generator = "",
-        args = "",
-        is_tte = is_tte
-      )
+      type_flags <- c(type_flags, if (is_tte) "tte" else "non-tte")
+      
+      if (!is_tte && nzchar(readout)) {
+        readout_map <- c(readout_map, sprintf("%s = %s", ep_names[i], readout))
+      }
     }
+    
+    ep_id <- paste0("ep_", as.integer(Sys.time()))
+    vals$pending_endpoints[[ep_id]] <- list(
+      name = paste(ep_names, collapse = ", "),
+      type = sprintf("c(%s)", paste(shQuote(type_flags), collapse = ", ")),
+      readout = if (length(readout_map) > 0) sprintf("c(%s)", paste(readout_map, collapse = ", ")) else "",
+      generator = "",
+      args = ""
+    )
     
     updateTextInput(session, "ep_name", value = "")
     vals$ep_table_raw <- NULL
