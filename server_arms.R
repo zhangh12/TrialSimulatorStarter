@@ -129,26 +129,7 @@ server_arms <- function(input, output, session, vals) {
     
     vals$pending_endpoints <- list()
     updateTextInput(session, "arm_label", value = "")
-    updateTextInput(session, "arm_ratio", value = "1")
-  })
-  
-  # ---- Duplicate Arm ----
-  observeEvent(input$duplicate_arm, {
-    selected <- input$arm_table_rows_selected
-    if (length(selected) != 1) return()
-    
-    arm_ids <- names(vals$arms)
-    selected_id <- arm_ids[selected]
-    original <- vals$arms[[selected_id]]
-    
-    new_label <- paste(original$label, "Copy")
-    new_id <- paste0("arm_", as.integer(Sys.time()))
-    
-    vals$arms[[new_id]] <- list(
-      label = new_label,
-      ratio = original$ratio,
-      endpoints = original$endpoints
-    )
+    updateTextInput(session, "arm_ratio", value = "")
   })
   
   # ---- Delete Arm ----
@@ -206,6 +187,47 @@ server_arms <- function(input, output, session, vals) {
       size = "l"
     ))
   })
+  
+  # ---- Dynamic Main Arm Button ----
+  output$arm_main_button <- renderUI({
+    label <- if (length(vals$arms) == 0) "➕ Add Arm" else "📄 Duplicate Arm"
+    actionButton("add_arm", label, width = "100%")
+  })
+  
+  # ---- Dynamic Table Buttons (Edit/Delete) ----
+  output$arm_table_buttons <- renderUI({
+    if (length(vals$arms) == 0 || length(input$arm_table_rows_selected) != 1) return(NULL)
+    
+    fluidRow(
+      column(6, actionButton("edit_arm", "✏️ Edit Arm", width = "100%")),
+      column(6, actionButton("delete_arm", "🗑️ Delete Arm", width = "100%"))
+    )
+  })
+  
+  # ---- Disable Arm Inputs When Arms Exist ----
+  observe({
+    is_disabled <- length(vals$arms) > 0
+    
+    input_ids <- c("arm_label", "arm_ratio", "ep_name", "ep_generator", "ep_args")
+    
+    for (id in input_ids) {
+      if (is_disabled) {
+        shinyjs::disable(id)
+      } else {
+        shinyjs::enable(id)
+      }
+    }
+    
+    if (is_disabled) {
+      # also disable endpoint-specific fields
+      for (i in seq_along(vals$ep_table_raw)) {
+        shinyjs::disable(paste0("is_tte_", i))
+        shinyjs::disable(paste0("readout_", i))
+      }
+    }
+  })
+  
+  
   
   
 }

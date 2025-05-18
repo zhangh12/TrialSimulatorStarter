@@ -1,6 +1,7 @@
 
 library(shiny)
 library(shinydashboard)
+library(shinyjs)
 
 #library(readr)
 #library(ggplot2)

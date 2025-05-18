@@ -1,6 +1,8 @@
 
 ui <- fluidPage(
   
+  shinyjs::useShinyjs(),
+  
   # ---- Title ----
   titlePanel("Trial Simulator"),
   
@@ -42,9 +44,7 @@ ui <- fluidPage(
                         
                         # Arm Control
                         hr(),
-                        actionButton("add_arm", "➕ Add Arm"),
-                        actionButton("duplicate_arm", "📄 Duplicate Arm"),
-                        actionButton("delete_arm", "🗑️ Delete Arm")
+                        uiOutput("arm_main_button")
                       )
                ),
                
@@ -54,7 +54,8 @@ ui <- fluidPage(
                       uiOutput("view_ep_ui"),
                       hr(),
                       h4("Defined Arms"),
-                      DTOutput("arm_table")
+                      DTOutput("arm_table"),
+                      uiOutput("arm_table_buttons")
                )
              )
     ),
