@@ -49,10 +49,8 @@ ui <- fluidPage(
                         textAreaInput("ep_args", "Generator Arguments", rows = 2),
                         
                         uiOutput("add_or_update_ep_button"),
-                        actionButton("delete_ep", "🗑️ Delete Endpoint️"),
                         
                         # Arm Control
-                        hr(),
                         uiOutput("arm_main_button")
                       )
                ),
@@ -60,12 +58,17 @@ ui <- fluidPage(
                column(9,
                       h4("Pending Endpoints"),
                       DTOutput("endpoint_table"),
-                      uiOutput("edit_ep_ui"),
-                      uiOutput("view_ep_ui"),
+                      
+                      div(style = "margin-top: 10px;", uiOutput("edit_ep_ui")),
+                      
+                      div(style = "margin-top: 10px;", uiOutput("view_or_delete_ep_ui")),
+                      
                       hr(),
                       h4("Defined Arms"),
                       DTOutput("arm_table"),
-                      uiOutput("arm_table_buttons")
+                      
+                      div(style = "margin-top: 10px;", uiOutput("arm_table_buttons"))
+                      
                )
              )
     ),
