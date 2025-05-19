@@ -1,5 +1,8 @@
 server_arms <- function(input, output, session, vals) {
   
+  vals$editing_arm_id <- NULL
+  vals$editing_ep_id <- NULL
+  
   vals$pending_endpoints <- list()
   vals$ep_table_raw <- NULL  # parsed from comma-separated input
   
@@ -58,9 +61,11 @@ server_arms <- function(input, output, session, vals) {
   # ---- Add Endpoint(s) ----
   observeEvent(input$add_ep, {
     
-    if (!nzchar(input$ep_name)) {
-      showNotification("Please specify at least one endpoint name.", type = "error")
-      return()
+    if (is.null(vals$editing_ep_id)) {
+      if (!nzchar(input$ep_name)) {
+        showNotification("Please specify at least one endpoint name.", type = "error")
+        return()
+      }
     }
     
     if (!nzchar(input$ep_generator)) {
@@ -89,21 +94,60 @@ server_arms <- function(input, output, session, vals) {
       return()
     }
     
+    ep_names_ <- if (is.null(vals$editing_ep_id)) {
+      sprintf("c(%s)", paste(shQuote(ep_names), collapse = ", "))
+    } else {
+      vals$pending_endpoints[[vals$editing_ep_id]]$name
+    }
+    
+    type_flags_ <- if (is.null(vals$editing_ep_id)) {
+      sprintf("c(%s)", paste(shQuote(type_flags), collapse = ", "))
+    } else {
+      vals$pending_endpoints[[vals$editing_ep_id]]$type
+    }
+    
+    readout_ <- if (is.null(vals$editing_ep_id)) {
+      if (length(readout_map) > 0) sprintf("c(%s)", paste(readout_map, collapse = ", ")) else ""
+    } else {
+      vals$pending_endpoints[[vals$editing_ep_id]]$readout
+    }
+    
     entry <- list(
-      name = sprintf("c(%s)", paste(shQuote(ep_names), collapse = ", ")),
-      type = sprintf("c(%s)", paste(shQuote(type_flags), collapse = ", ")),
-      readout = if (length(readout_map) > 0) sprintf("c(%s)", paste(readout_map, collapse = ", ")) else "",
+      name = ep_names_,
+      type = type_flags_,
+      readout = readout_,
       generator = input$ep_generator,
       args = input$ep_args
     )
     
     ep_id <- paste0("ep_", as.integer(Sys.time()))
-    vals$pending_endpoints[[ep_id]] <- entry
+    if (is.null(vals$editing_ep_id)) {
+      # Normal add
+      ep_id <- paste0("ep_", as.integer(Sys.time()))
+      vals$pending_endpoints[[ep_id]] <- entry
+    } else {
+      # Update
+      vals$pending_endpoints[[vals$editing_ep_id]] <- entry
+      vals$editing_ep_id <- NULL
+    }
     
     updateTextInput(session, "ep_name", value = "")
     updateTextInput(session, "ep_generator", value = "")
     updateTextInput(session, "ep_args", value = "")
     vals$ep_table_raw <- NULL
+  })
+  
+  observeEvent(input$edit_ep, {
+    selected <- input$endpoint_table_rows_selected
+    if (length(selected) != 1) return()
+    
+    ep_ids <- names(vals$pending_endpoints)
+    ep <- vals$pending_endpoints[[ep_ids[selected]]]
+    
+    vals$editing_ep_id <- ep_ids[selected]
+    
+    updateTextInput(session, "ep_generator", value = ep$generator)
+    updateTextInput(session, "ep_args", value = ep$args)
   })
   
   # ---- Delete Endpoint ----
@@ -118,18 +162,41 @@ server_arms <- function(input, output, session, vals) {
   
   # ---- Add Arm ----
   observeEvent(input$add_arm, {
-    req(nzchar(input$arm_label), nzchar(input$arm_ratio))
+    if (!nzchar(input$arm_label)) {
+      showNotification("Please provide arm label.", type = "error")
+      return()
+    }
+    if (!nzchar(input$arm_ratio)) {
+      showNotification("Please provide randomization ratio.", type = "error")
+      return()
+    }
     
-    arm_id <- paste0("arm_", as.integer(Sys.time()))
-    vals$arms[[arm_id]] <- list(
-      label = input$arm_label,
-      ratio = input$arm_ratio,
-      endpoints = vals$pending_endpoints
-    )
+    if (!is.null(vals$editing_arm_id)) {
+      # Update existing arm
+      vals$arms[[vals$editing_arm_id]]$label <- input$arm_label
+      vals$arms[[vals$editing_arm_id]]$ratio <- input$arm_ratio
+      vals$arms[[vals$editing_arm_id]]$endpoints <- vals$pending_endpoints
+      
+      vals$editing_arm_id <- NULL
+      showNotification("✅ Arm updated", type = "message")
+    } else {
+      # Add new or duplicate arm
+      new_id <- paste0("arm_", as.integer(Sys.time()))
+      vals$arms[[new_id]] <- list(
+        label = input$arm_label,
+        ratio = input$arm_ratio,
+        endpoints = vals$pending_endpoints
+      )
+    }
     
-    vals$pending_endpoints <- list()
+    # Reset UI
     updateTextInput(session, "arm_label", value = "")
     updateTextInput(session, "arm_ratio", value = "")
+    updateTextInput(session, "ep_name", value = "")
+    updateTextInput(session, "ep_generator", value = "")
+    updateTextInput(session, "ep_args", value = "")
+    vals$pending_endpoints <- list()
+    vals$ep_table_raw <- NULL
   })
   
   # ---- Delete Arm ----
@@ -166,6 +233,20 @@ server_arms <- function(input, output, session, vals) {
     actionButton("view_ep", "🔍 View Endpoint", width = "100%")
   })
   
+  output$edit_ep_ui <- renderUI({
+    if (length(vals$pending_endpoints) == 0 || is.null(vals$editing_arm_id)) return(NULL)
+    if (length(input$endpoint_table_rows_selected) != 1) return(NULL)
+    
+    actionButton("edit_ep", "✏️ Edit Endpoint", width = "100%")
+  })
+  
+  output$add_or_update_ep_button <- renderUI({
+    label <- if (is.null(vals$editing_ep_id)) "➕ Add Endpoint" else "💾 Update Endpoint"
+    actionButton("add_ep", label)
+  })
+  
+  
+  
   # ---- View Endpoints ----
   observeEvent(input$view_ep, {
     selected <- input$endpoint_table_rows_selected
@@ -199,14 +280,75 @@ server_arms <- function(input, output, session, vals) {
     if (length(vals$arms) == 0 || length(input$arm_table_rows_selected) != 1) return(NULL)
     
     fluidRow(
-      column(6, actionButton("edit_arm", "✏️ Edit Arm", width = "100%")),
+      column(6, uiOutput("edit_or_save_arm_button")),
       column(6, actionButton("delete_arm", "🗑️ Delete Arm", width = "100%"))
     )
   })
   
+  # ---- Edit Arm ----
+  observeEvent(input$edit_arm, {
+    selected <- input$arm_table_rows_selected
+    if (length(selected) != 1) return()
+    
+    arm_ids <- names(vals$arms)
+    selected_id <- arm_ids[selected]
+    arm <- vals$arms[[selected_id]]
+    
+    # Store edit mode
+    vals$editing_arm_id <- selected_id
+    vals$pending_endpoints <- arm$endpoints
+    
+    # Populate UI
+    updateTextInput(session, "arm_label", value = arm$label)
+    updateTextInput(session, "arm_ratio", value = arm$ratio)
+  })
+  
+  output$edit_or_save_arm_button <- renderUI({
+    if (length(vals$arms) == 0 || length(input$arm_table_rows_selected) != 1) return(NULL)
+    
+    if (is.null(vals$editing_arm_id)) {
+      actionButton("edit_arm", "✏️ Edit Arm", width = "100%")
+    } else {
+      actionButton("save_arm", "💾 Save Arm", width = "100%")
+    }
+  })
+  
+  observeEvent(input$save_arm, {
+    if (!nzchar(input$arm_label)) {
+      showNotification("Please provide arm label.", type = "error")
+      return()
+    }
+    if (!nzchar(input$arm_ratio)) {
+      showNotification("Please provide randomization ratio.", type = "error")
+      return()
+    }
+    
+    # Update arm
+    if (!is.null(vals$editing_arm_id)) {
+      vals$arms[[vals$editing_arm_id]]$label <- input$arm_label
+      vals$arms[[vals$editing_arm_id]]$ratio <- input$arm_ratio
+      vals$arms[[vals$editing_arm_id]]$endpoints <- vals$pending_endpoints
+      
+      vals$editing_arm_id <- NULL
+      vals$pending_endpoints <- list()
+      vals$ep_table_raw <- NULL
+      
+      updateTextInput(session, "arm_label", value = "")
+      updateTextInput(session, "arm_ratio", value = "")
+      updateTextInput(session, "ep_name", value = "")
+      updateTextInput(session, "ep_generator", value = "")
+      updateTextInput(session, "ep_args", value = "")
+      
+      showNotification("✅ Arm updated", type = "message")
+    }
+  })
+  
+  
+  
+  
   # ---- Disable Arm Inputs When Arms Exist ----
   observe({
-    is_disabled <- length(vals$arms) > 0
+    is_disabled <- length(vals$arms) > 0 && is.null(vals$editing_arm_id)
     
     input_ids <- c("arm_label", "arm_ratio", "ep_name", "ep_generator", "ep_args")
     
@@ -225,6 +367,19 @@ server_arms <- function(input, output, session, vals) {
         shinyjs::disable(paste0("readout_", i))
       }
     }
+    
+    if (!is.null(vals$editing_ep_id)) {
+      shinyjs::disable("ep_name")
+    } else if (!is_disabled) {
+      shinyjs::enable("ep_name")
+    }
+    
+    if (!is.null(vals$editing_arm_id)) {
+      shinyjs::disable("add_arm")
+    } else {
+      shinyjs::enable("add_arm")
+    }
+    
   })
   
   

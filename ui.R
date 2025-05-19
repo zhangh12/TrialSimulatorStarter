@@ -39,8 +39,8 @@ ui <- fluidPage(
                         textInput("ep_generator", "Generator"),
                         textAreaInput("ep_args", "Generator Arguments", rows = 2),
                         
-                        actionButton("add_ep", "➕"),
-                        actionButton("delete_ep", "🗑️"),
+                        uiOutput("add_or_update_ep_button"),
+                        actionButton("delete_ep", "🗑️ Delete Endpoint️"),
                         
                         # Arm Control
                         hr(),
@@ -51,6 +51,7 @@ ui <- fluidPage(
                column(9,
                       h4("Pending Endpoints"),
                       DTOutput("endpoint_table"),
+                      uiOutput("edit_ep_ui"),
                       uiOutput("view_ep_ui"),
                       hr(),
                       h4("Defined Arms"),
