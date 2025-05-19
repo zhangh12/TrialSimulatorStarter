@@ -162,41 +162,87 @@ server_arms <- function(input, output, session, vals) {
   
   # ---- Add Arm ----
   observeEvent(input$add_arm, {
-    if (!nzchar(input$arm_label)) {
-      showNotification("Please provide arm label.", type = "error")
-      return()
-    }
-    if (!nzchar(input$arm_ratio)) {
-      showNotification("Please provide randomization ratio.", type = "error")
-      return()
-    }
     
     if (!is.null(vals$editing_arm_id)) {
-      # Update existing arm
+      # ✅ Save arm being edited
+      if (!nzchar(input$arm_label)) {
+        showNotification("Please provide arm label.", type = "error")
+        return()
+      }
+      if (!nzchar(input$arm_ratio)) {
+        showNotification("Please provide randomization ratio.", type = "error")
+        return()
+      }
+      
       vals$arms[[vals$editing_arm_id]]$label <- input$arm_label
       vals$arms[[vals$editing_arm_id]]$ratio <- input$arm_ratio
       vals$arms[[vals$editing_arm_id]]$endpoints <- vals$pending_endpoints
       
       vals$editing_arm_id <- NULL
+      vals$pending_endpoints <- list()
+      vals$ep_table_raw <- NULL
+      
+      updateTextInput(session, "arm_label", value = "")
+      updateTextInput(session, "arm_ratio", value = "")
+      updateTextInput(session, "ep_name", value = "")
+      updateTextInput(session, "ep_generator", value = "")
+      updateTextInput(session, "ep_args", value = "")
+      
       showNotification("✅ Arm updated", type = "message")
     } else {
-      # Add new or duplicate arm
+      # ✅ Check if we're duplicating instead of adding
+      if (length(input$arm_table_rows_selected) == 1 && length(vals$arms) > 0) {
+        selected_id <- names(vals$arms)[input$arm_table_rows_selected]
+        original <- vals$arms[[selected_id]]
+        
+        base_label <- paste0(original$label, " Copy")
+        all_labels <- sapply(vals$arms, function(a) a$label)
+        label <- base_label
+        i <- 2
+        while (label %in% all_labels) {
+          label <- paste0(base_label, " ", i)
+          i <- i + 1
+        }
+        
+        new_id <- paste0("arm_", as.integer(Sys.time()))
+        vals$arms[[new_id]] <- list(
+          label = label,
+          ratio = original$ratio,
+          endpoints = original$endpoints
+        )
+        
+        showNotification(glue::glue("✅ Arm duplicated: {label}"), type = "message")
+        return()  # ❗ Do not continue to manual add path
+      }
+      
+      # ✅ Add arm manually
+      if (!nzchar(input$arm_label)) {
+        showNotification("Please provide arm label.", type = "error")
+        return()
+      }
+      if (!nzchar(input$arm_ratio)) {
+        showNotification("Please provide randomization ratio.", type = "error")
+        return()
+      }
+      
       new_id <- paste0("arm_", as.integer(Sys.time()))
       vals$arms[[new_id]] <- list(
         label = input$arm_label,
         ratio = input$arm_ratio,
         endpoints = vals$pending_endpoints
       )
+      
+      vals$pending_endpoints <- list()
+      vals$ep_table_raw <- NULL
+      
+      updateTextInput(session, "arm_label", value = "")
+      updateTextInput(session, "arm_ratio", value = "")
+      updateTextInput(session, "ep_name", value = "")
+      updateTextInput(session, "ep_generator", value = "")
+      updateTextInput(session, "ep_args", value = "")
+      
+      showNotification("✅ Arm added", type = "message")
     }
-    
-    # Reset UI
-    updateTextInput(session, "arm_label", value = "")
-    updateTextInput(session, "arm_ratio", value = "")
-    updateTextInput(session, "ep_name", value = "")
-    updateTextInput(session, "ep_generator", value = "")
-    updateTextInput(session, "ep_args", value = "")
-    vals$pending_endpoints <- list()
-    vals$ep_table_raw <- NULL
   })
   
   # ---- Delete Arm ----
