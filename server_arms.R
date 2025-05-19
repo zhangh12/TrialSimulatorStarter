@@ -273,10 +273,15 @@ server_arms <- function(input, output, session, vals) {
     datatable(df, selection = "single", rownames = FALSE)
   })
   
-  # ---- Render View Endpoint Button ----
-  output$view_ep_ui <- renderUI({
+  # ---- Render View and Delete Endpoint Buttons ----
+  output$view_or_delete_ep_ui <- renderUI({
     if (length(vals$pending_endpoints) == 0) return(NULL)
-    actionButton("view_ep", "🔍 View Endpoint", width = "100%")
+    
+    div(style = "margin-top: 100px;", uiOutput("pending_ep_buttons"))
+    fluidRow(
+      column(6, actionButton("delete_ep", "🗑️ Delete Endpoint", width = "100%")),
+      column(6, actionButton("view_ep", "🔍 View Endpoint", width = "100%"))
+    )
   })
   
   output$edit_ep_ui <- renderUI({
@@ -318,7 +323,7 @@ server_arms <- function(input, output, session, vals) {
   # ---- Dynamic Main Arm Button ----
   output$arm_main_button <- renderUI({
     label <- if (length(vals$arms) == 0) "➕ Add Arm" else "📄 Duplicate Arm"
-    actionButton("add_arm", label, width = "100%")
+    actionButton("add_arm", label)
   })
   
   # ---- Dynamic Table Buttons (Edit/Delete) ----
