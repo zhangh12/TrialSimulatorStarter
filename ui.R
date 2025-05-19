@@ -22,7 +22,8 @@ ui <- fluidPage(
                downloadButton("save_config", label = tagList(icon("save"), "Save Config"), class = "btn btn-primary"),
                tags$label(class = "btn btn-primary", tagList(icon("folder-open"), "Load Config"),
                           tags$input(id = "load_config", type = "file", style = "display: none;", accept = ".json")
-               )
+               ),
+               actionButton("reset_app", label = tagList(icon("redo"), "Restart"), class = "btn btn-danger")
            )
     )
   ),
