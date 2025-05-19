@@ -1,3 +1,12 @@
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
+library(dplyr)
+library(glue)
+library(DT)
+library(shinyAce)
+library(rclipboard)
+library(jsonlite)
 
 ui <- fluidPage(
   
