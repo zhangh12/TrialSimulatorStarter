@@ -14,6 +14,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       }
       
       codes_ <- paste0(
+        "\n",
         "trial <- trial(\n", 
         "  name = \"trial\",\n", 
         "  n_patients = ", vals$trial_info$n, ", \n", 
@@ -38,7 +39,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       
       codes_
     } else {
-      "trial <- trial(...)  # trial info not specified"
+      "trial <- trial(...)  # trial info not specified\n\n"
     }
     
     
@@ -72,13 +73,13 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       )
     })
     
-    final_code <- paste0(trial_info_block, '\n\n', paste0(trial_events_block, collapse = '\n\n'), '\n\n')
+    final_code <- paste0("\n", trial_info_block, '\n\n', paste0(trial_events_block, collapse = '\n\n'), '\n\n')
     event_names <- paste(sapply(vals$trial_events, function(event) gsub("\\s+", "_", event$name)), collapse = ", ")
     final_code <- glue::glue("{final_code}\n\n",
                              "listener <- listener()\n",
                              "listener$add_events({event_names})\n\n",
                              "controller <- controller(trial, listener)\n",
-                             "controller$run(n = 1, plot_event = TRUE)\n")
+                             "controller$run(n = 1, plot_event = TRUE)\n\n")
     
     updateAceEditor(session, "code", value = final_code)
     code_text(final_code)
