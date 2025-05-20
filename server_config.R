@@ -47,31 +47,6 @@ server_config <- function(input, output, session, vals) {
     })
   })
   
-  observeEvent(input$reset_app, {
-    # 🔄 Reset all state
-    vals$arms <- list()
-    vals$trial_events <- list()
-    vals$conditions <- list()
-    vals$condition_ids <- LETTERS
-    vals$pending_endpoints <- list()
-    vals$ep_table_raw <- NULL
-    vals$editing_arm_id <- NULL
-    vals$editing_ep_id <- NULL
-    
-    # 🧹 Clear all UI inputs
-    updateTextInput(session, "arm_label", value = "")
-    updateTextInput(session, "arm_ratio", value = "")
-    updateTextInput(session, "ep_name", value = "")
-    updateTextInput(session, "ep_generator", value = "")
-    updateTextInput(session, "ep_args", value = "")
-    
-    updateTextInput(session, "event_name", value = "")
-    updateTextInput(session, "logic_expr", value = "")
-    updateRadioButtons(session, "condition_type", selected = character(0))
-    
-    showNotification("🔁 App reset successfully", type = "message")
-  })
-  
   output$save_config <- downloadHandler(
     filename = function() {
       paste0("trial_config_", Sys.Date(), ".json")
@@ -88,4 +63,46 @@ server_config <- function(input, output, session, vals) {
       )
     }
   )
+  
+  # Show confirmation modal when user clicks Restart
+  observeEvent(input$reset_app, {
+    showModal(modalDialog(
+      title = "Confirm Restart",
+      "Are you sure you want to reset the app? All unsaved progress will be lost.",
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("confirm_reset", "Yes, Reset", class = "btn btn-danger")
+      ),
+      easyClose = TRUE
+    ))
+  })
+  
+  # Perform reset if confirmed
+  observeEvent(input$confirm_reset, {
+    removeModal()
+    
+    # reset all states
+    vals$arms <- list()
+    vals$trial_events <- list()
+    vals$conditions <- list()
+    vals$condition_ids <- LETTERS
+    vals$pending_endpoints <- list()
+    vals$ep_table_raw <- NULL
+    vals$editing_arm_id <- NULL
+    vals$editing_ep_id <- NULL
+    
+    # clear all UI inputs
+    updateTextInput(session, "arm_label", value = "")
+    updateTextInput(session, "arm_ratio", value = "")
+    updateTextInput(session, "ep_name", value = "")
+    updateTextInput(session, "ep_generator", value = "")
+    updateTextInput(session, "ep_args", value = "")
+    
+    updateTextInput(session, "event_name", value = "")
+    updateTextInput(session, "logic_expr", value = "")
+    updateRadioButtons(session, "condition_type", selected = character(0))
+    
+    showNotification("🔁 App reset successfully", type = "message")
+  })
+  
 }
