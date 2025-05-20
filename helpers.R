@@ -1,5 +1,60 @@
 
 
+generate_arm_codes <- function(arms){
+  
+  codes <- 
+    sapply(arms, 
+           function(arm){
+             
+             arm_variable <- gsub("\\s+", "_", arm$label)
+             arm_codes <- glue::glue("# define arm: {arm$label}\n", 
+                                     "{arm_variable} <- arm(name = \"{arm$label}\")\n\n")
+             
+             ep_codes <- 
+               sapply(seq_along(arm$endpoints), 
+                      function(idx){
+                        endpoint <- arm$endpoints[[idx]]
+                        
+                        ep_idx <- glue::glue("ep_", idx)
+                        ep_codes <- glue::glue("{ep_idx} <- endpoint(\n", 
+                                               "  name = {endpoint$name}, \n", 
+                                               "  type = {endpoint$type}, ", 
+                                               .trim = FALSE)
+                        
+                        if (endpoint$readout != "") {
+                          ep_codes <- glue::glue("{ep_codes}\n", 
+                                                 "  readout = {endpoint$readout}, ", 
+                                                 .trim = FALSE)
+                        }
+                        
+                        ep_codes <- glue::glue("{ep_codes}\n", 
+                                               "  generator = {endpoint$generator}", 
+                                               .trim = FALSE)
+                        
+                        if (endpoint$args != "") {
+                          ep_codes <- glue::glue("{ep_codes}, \n", 
+                                                 "  {endpoint$args}\n)\n", 
+                                                 .trim = FALSE)
+                        } else {
+                          ep_codes <- glue::glue("{ep_codes}\n)\n", 
+                                                 .trim = FALSE)
+                        }
+                        
+                        ep_codes
+                      })
+             
+             arm_codes <- glue::glue("{arm_codes}\n", 
+                                     "{paste0(ep_codes, collapse = '\n')}\n", 
+                                     "{arm_variable}$add_endpoints({paste0(paste0('ep_', seq_along(arm$endpoints)), collapse = ', ')})\n\n")
+             
+             arm_codes
+           })
+  
+  codes <- paste0(codes, 
+                  collapse = '\n#-----------------------------------------\n\n')
+  codes
+  
+}
 generate_trial_info_codes <- function(input){
   
   `%|%` <- function(a, b) if (a != "") a else b
@@ -85,6 +140,9 @@ generate_trial_event_codes <- function(trial_events){
     )
   })
   
+  codes <- paste0(codes, collapse = '\n\n#-----------------------------------------\n\n')
+  
   codes
   
 }
+

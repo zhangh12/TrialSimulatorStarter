@@ -38,14 +38,13 @@ server_config <- function(input, output, session, vals) {
       
       vals$arms <- loaded$arms %||% list()
       
-      vals$trial_info <- loaded$trial_info %||% list()
-      
       # display values on Trial Info tab
-      updateTextInput(session, "trial_n", value = vals$trial_info$n %||% "")
-      updateTextInput(session, "trial_duration", value = vals$trial_info$duration %||% "")
-      updateTextAreaInput(session, "accrual_rate", value = vals$trial_info$accrual_rate %||% "")
-      updateTextInput(session, "dropout", value = vals$trial_info$dropout %||% "")
-      updateTextAreaInput(session, "dropout_args", value = vals$trial_info$dropout_args %||% "")
+      trial_info <- loaded$trial_info
+      updateTextInput(session, "trial_n", value = trial_info$n %||% "")
+      updateTextInput(session, "trial_duration", value = trial_info$duration %||% "")
+      updateTextAreaInput(session, "accrual_rate", value = trial_info$accrual_rate %||% "")
+      updateTextInput(session, "dropout", value = trial_info$dropout %||% "")
+      updateTextAreaInput(session, "dropout_args", value = trial_info$dropout_args %||% "")
       
       showNotification("✅ Config loaded successfully", type = "message")
       
@@ -63,7 +62,13 @@ server_config <- function(input, output, session, vals) {
         list(
           trial_events = vals$trial_events,
           arms = vals$arms,
-          trial_info = vals$trial_info
+          trial_info = list(
+            n = input$trial_n,
+            duration = input$trial_duration,
+            accrual_rate = input$accrual_rate,
+            dropout = input$dropout,
+            dropout_args = input$dropout_args
+          )
         ),
         path = file,
         pretty = TRUE,

@@ -1,10 +1,13 @@
 server_code_tab <- function(input, output, session, vals, code_text) {
   
   observe({
-    if (length(vals$trial_events) == 0 && length(vals$trial_info) == 0) {
+    if (length(vals$trial_events) == 0 && length(vals$arms) == 0) {
       updateAceEditor(session, "code", value = "")
       return()
     }
+    
+    # ---- Arm ----
+    arm_block <- generate_arm_codes(vals$arms)
     
     # ---- Trial Info ----
     trial_info_block <- generate_trial_info_codes(input)
@@ -12,13 +15,17 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     # ---- Trial Event ----
     trial_events_block <- generate_trial_event_codes(vals$trial_events)
     
-    final_code <- glue::glue("\n{trial_info_block}\n\n", 
-                             "{paste0(trial_events_block, collapse = '\n\n')}\n\n", 
+    final_code <- glue::glue("\n{arm_block}\n\n", 
+                             "#-----------------------------------------\n\n", 
+                             "{trial_info_block}",
+                             "#-----------------------------------------\n\n", 
+                             "{trial_events_block}",
                              .trim = FALSE)
     
     event_names <- paste(sapply(vals$trial_events, function(event) gsub("\\s+", "_", event$name)), collapse = ", ")
     
     final_code <- glue::glue("{final_code}\n\n",
+                             "#-----------------------------------------\n\n", 
                              "listener <- listener()\n",
                              "listener$add_events({event_names})\n\n",
                              "controller <- controller(trial, listener)\n",
