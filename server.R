@@ -8,6 +8,7 @@ library(shinyAce)
 library(rclipboard)
 library(jsonlite)
 
+source('helpers.R')
 source("server_config.R")
 source("server_trial_info.R")
 source("server_arms.R")

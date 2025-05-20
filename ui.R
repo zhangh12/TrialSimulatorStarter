@@ -49,11 +49,12 @@ ui <- fluidPage(
                  textAreaInput("dropout_args", "Dropout Args", rows = 2)
                )
         )
-      ),
-      fluidRow(
-        column(12, align = "left",
-               actionButton("update_trial_info", "Update", class = "btn btn-primary"))
       )
+      # ,
+      # fluidRow(
+      #   column(12, align = "left",
+      #          actionButton("update_trial_info", "Update", class = "btn btn-primary"))
+      # )
     ),
     
     # ---- Arm Tab ----
