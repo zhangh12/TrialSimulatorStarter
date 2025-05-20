@@ -8,12 +8,12 @@ library(shinyAce)
 library(rclipboard)
 library(jsonlite)
 
-source('helpers.R')
-source("server_config.R")
-source("server_trial_info.R")
-source("server_arms.R")
-source("server_trial_events.R")
-source("server_code_tab.R")
+source('R/helpers.R')
+source("R/server_config.R")
+source("R/server_trial_info.R")
+source("R/server_arms.R")
+source("R/server_trial_events.R")
+source("R/server_code_tab.R")
 
 
 server <- function(input, output, session) {

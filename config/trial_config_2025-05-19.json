@@ -1,0 +1,116 @@
+{
+  "trial_events": {
+    "event_4": {
+      "name": "dose selection",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Calendar Time",
+          "Value": "50"
+        }
+      },
+      "logic": "A"
+    },
+    "event_2": {
+      "name": "interim",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Event Number",
+          "Value": "pfs:200"
+        },
+        "B": {
+          "ID": "B",
+          "Type": "Event Number",
+          "Value": "os:150"
+        }
+      },
+      "logic": "A & B"
+    },
+    "event_3": {
+      "name": "final",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Calendar Time",
+          "Value": "52"
+        },
+        "B": {
+          "ID": "B",
+          "Type": "Event Number",
+          "Value": "os:300"
+        }
+      },
+      "logic": "A | B"
+    }
+  },
+  "arms": {
+    "arm_1747630480": {
+      "label": "pbo",
+      "ratio": "1",
+      "endpoints": {
+        "ep_1747630468": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = 1"
+        },
+        "ep_1747630479": {
+          "name": "c('upcr')",
+          "type": "c('non-tte')",
+          "readout": "c(upcr = 10)",
+          "generator": "rnorm",
+          "args": "sd=2"
+        }
+      }
+    },
+    "arm_1747630482": {
+      "label": "trt",
+      "ratio": "2",
+      "endpoints": {
+        "ep_1747630468": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = 1.5"
+        },
+        "ep_1747630479": {
+          "name": "c('upcr')",
+          "type": "c('non-tte')",
+          "readout": "c(upcr = 10)",
+          "generator": "rnorm",
+          "args": "sd=2.8"
+        }
+      }
+    },
+    "arm_1747630767": {
+      "label": "high",
+      "ratio": "3",
+      "endpoints": {
+        "ep_1747630468": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = 2.3"
+        },
+        "ep_1747630479": {
+          "name": "c('upcr')",
+          "type": "c('non-tte')",
+          "readout": "c(upcr = 10)",
+          "generator": "rnorm",
+          "args": "sd=3.4"
+        }
+      }
+    }
+  },
+  "trial_info": {
+    "n": "1200",
+    "duration": "52",
+    "accrual_rate": "",
+    "dropout": "rexp",
+    "dropout_args": ""
+  }
+}
