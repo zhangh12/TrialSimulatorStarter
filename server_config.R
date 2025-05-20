@@ -33,24 +33,19 @@ server_config <- function(input, output, session, vals) {
       updateTextInput(session, "logic_expr", value = "")
       updateRadioButtons(session, "condition_type", selected = character(0))
       
-      updateTextInput(session, "trial_n", value = "")
-      updateTextInput(session, "trial_duration", value = "")
-      updateTextAreaInput(session, "accrual_rate", value = "")
-      updateTextInput(session, "dropout", value = "")
-      updateTextAreaInput(session, "dropout_args", value = "")
-      
       # ✅ Load config into now-clean environment
-      if (!is.null(loaded$trial_events)) {
-        vals$trial_events <- loaded$trial_events
-      }
+      vals$trial_events <- loaded$trial_events %||% list()
       
-      if (!is.null(loaded$arms)) {
-        vals$arms <- loaded$arms
-      }
+      vals$arms <- loaded$arms %||% list()
       
-      if (!is.null(loaded$trial_info)) {
-        vals$trial_info <- loaded$trial_info
-      }
+      vals$trial_info <- loaded$trial_info %||% list()
+      
+      # display values on Trial Info tab
+      updateTextInput(session, "trial_n", value = vals$trial_info$n %||% "")
+      updateTextInput(session, "trial_duration", value = vals$trial_info$duration %||% "")
+      updateTextAreaInput(session, "accrual_rate", value = vals$trial_info$accrual_rate %||% "")
+      updateTextInput(session, "dropout", value = vals$trial_info$dropout %||% "")
+      updateTextAreaInput(session, "dropout_args", value = vals$trial_info$dropout_args %||% "")
       
       showNotification("✅ Config loaded successfully", type = "message")
       
