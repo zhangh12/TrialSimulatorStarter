@@ -1,5 +1,7 @@
 server_config <- function(input, output, session, vals) {
   
+  `%||%` <- function(a, b) if (!is.null(a)) a else b
+  
   observeEvent(input$load_config, {
     req(input$load_config)
     
@@ -31,6 +33,12 @@ server_config <- function(input, output, session, vals) {
       updateTextInput(session, "logic_expr", value = "")
       updateRadioButtons(session, "condition_type", selected = character(0))
       
+      updateTextInput(session, "trial_n", value = "")
+      updateTextInput(session, "trial_duration", value = "")
+      updateTextAreaInput(session, "accrual_rate", value = "")
+      updateTextInput(session, "dropout", value = "")
+      updateTextAreaInput(session, "dropout_args", value = "")
+      
       # ✅ Load config into now-clean environment
       if (!is.null(loaded$trial_events)) {
         vals$trial_events <- loaded$trial_events
@@ -38,6 +46,10 @@ server_config <- function(input, output, session, vals) {
       
       if (!is.null(loaded$arms)) {
         vals$arms <- loaded$arms
+      }
+      
+      if (!is.null(loaded$trial_info)) {
+        vals$trial_info <- loaded$trial_info
       }
       
       showNotification("✅ Config loaded successfully", type = "message")
@@ -55,7 +67,8 @@ server_config <- function(input, output, session, vals) {
       jsonlite::write_json(
         list(
           trial_events = vals$trial_events,
-          arms = vals$arms
+          arms = vals$arms,
+          trial_info = vals$trial_info
         ),
         path = file,
         pretty = TRUE,
@@ -90,6 +103,7 @@ server_config <- function(input, output, session, vals) {
     vals$ep_table_raw <- NULL
     vals$editing_arm_id <- NULL
     vals$editing_ep_id <- NULL
+    vals$trial_info <- list()
     
     # clear all UI inputs
     updateTextInput(session, "arm_label", value = "")
@@ -101,6 +115,12 @@ server_config <- function(input, output, session, vals) {
     updateTextInput(session, "event_name", value = "")
     updateTextInput(session, "logic_expr", value = "")
     updateRadioButtons(session, "condition_type", selected = character(0))
+    
+    updateTextInput(session, "trial_n", value = "")
+    updateTextInput(session, "trial_duration", value = "")
+    updateTextAreaInput(session, "accrual_rate", value = "")
+    updateTextInput(session, "dropout", value = "")
+    updateTextAreaInput(session, "dropout_args", value = "")
     
     showNotification("🔁 App reset successfully", type = "message")
   })
