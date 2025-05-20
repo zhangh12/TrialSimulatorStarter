@@ -97,7 +97,8 @@ server_trial_events <- function(input, output, session, vals) {
       }
     }
     
-    event_id <- paste0("event_", length(vals$trial_events) + 1)
+    event_id <- paste0("event_", as.integer(Sys.time()))
+    
     vals$trial_events[[event_id]] <- list(
       name = input$event_name,
       conditions = vals$conditions,
