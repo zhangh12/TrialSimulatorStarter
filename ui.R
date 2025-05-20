@@ -31,6 +31,37 @@ ui <- fluidPage(
   # ---- Main Content Tabs ----
   tabsetPanel(
     
+    # ---- Trial Tab
+    tabPanel(
+      "Trial",
+      fluidRow(
+        column(6,
+               hr(),
+               textInput("trial_name", "Trial Name", value = "trial-314", placeholder = "e.g. Phase 3 Breast Cancer Trial"),
+               textInput("trial_n", "Number of Patients", value = 1000),
+               textInput("trial_duration", "Trial Duration", value = 52),
+               
+               textAreaInput("accrual_rate", "Accrual Rate", 
+                             value = '
+data.frame(
+  end_time = c(6, 12, Inf), 
+  piecewise_rate = c(30, 40, 50)
+)',
+                             rows = 4)
+
+        ),
+        column(6,
+               hr(),
+               textInput("dropout", "Dropout"),
+               textAreaInput("dropout_args", "Dropout Arguments", rows = 2)
+        )
+      ),
+      fluidRow(
+        column(12, align = "left",
+               actionButton("update_trial", "Update", class = "btn btn-primary"))
+      )
+    ),
+    
     # ---- Arm Tab ----
     tabPanel("Arm",
              fluidRow(

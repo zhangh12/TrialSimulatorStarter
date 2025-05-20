@@ -9,6 +9,7 @@ library(rclipboard)
 library(jsonlite)
 
 source("server_config.R")
+source("server_trial_tab.R")
 source("server_arms.R")
 source("server_trial_events.R")
 source("server_code_tab.R")
