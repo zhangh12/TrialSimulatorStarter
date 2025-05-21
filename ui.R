@@ -7,6 +7,7 @@ library(DT)
 library(shinyAce)
 library(rclipboard)
 library(jsonlite)
+library(shinyWidgets)
 
 ui <- fluidPage(
   
@@ -152,6 +153,22 @@ ui <- fluidPage(
     # ---- Code Tab ----
     tabPanel("Code",
              rclipboard::rclipboardSetup(),
+             
+             fluidRow(
+               column(6,
+                      div(style = "margin-top: 10px;",
+                          switchInput(
+                            inputId = "manual_edit_mode",
+                            label = "Edit",
+                            value = FALSE,
+                            onLabel = "ON",
+                            offLabel = "OFF",
+                            size = "small"
+                          )
+                      )
+               )
+             ),
+             
              fluidRow(
                column(12,
                       shinyAce::aceEditor("code", mode = "r", theme = "textmate", readOnly = TRUE, height = "300px"),
@@ -160,6 +177,5 @@ ui <- fluidPage(
              )
     )
     
-    # Future: add tabPanel("Arm", ...) and others here
   )
 )
