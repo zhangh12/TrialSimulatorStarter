@@ -107,7 +107,7 @@ server_trial_events <- function(input, output, session, vals) {
         remove_arm = input$adapt_remove_arm,
         add_arm = input$adapt_add_arm,
         update_ratio = input$adapt_update_ratio,
-        extend_time = input$adapt_extend_time,
+        extend_duration = input$adapt_extend_duration,
         adjust_n = input$adapt_adjust_n
       )
     )
@@ -121,7 +121,7 @@ server_trial_events <- function(input, output, session, vals) {
     updateCheckboxInput(session, "adapt_remove_arm", value = FALSE)
     updateCheckboxInput(session, "adapt_add_arm", value = FALSE)
     updateCheckboxInput(session, "adapt_update_ratio", value = FALSE)
-    updateCheckboxInput(session, "adapt_extend_time", value = FALSE)
+    updateCheckboxInput(session, "adapt_extend_duration", value = FALSE)
     updateCheckboxInput(session, "adapt_adjust_n", value = FALSE)
     
   })
@@ -134,7 +134,7 @@ server_trial_events <- function(input, output, session, vals) {
         remove_arm = FALSE,
         add_arm = FALSE,
         update_ratio = FALSE,
-        extend_time = FALSE,
+        extend_duration = FALSE,
         adjust_n = FALSE
       )
       data.frame(
@@ -144,7 +144,7 @@ server_trial_events <- function(input, output, session, vals) {
         `Remove Arm` = ifelse(adapt$remove_arm, "Yes", "No"),
         `Add Arm` = ifelse(adapt$add_arm, "Yes", "No"),
         `Update Ratio` = ifelse(adapt$update_ratio, "Yes", "No"),
-        `Extend Duration` = ifelse(adapt$extend_time, "Yes", "No"),
+        `Extend Duration` = ifelse(adapt$extend_duration, "Yes", "No"),
         `Adjust Size` = ifelse(adapt$adjust_n, "Yes", "No"),
         stringsAsFactors = FALSE, check.names = FALSE
       )

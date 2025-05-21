@@ -126,7 +126,7 @@ ui <- fluidPage(
                         checkboxInput("adapt_remove_arm", "Remove an arm", value = FALSE),
                         checkboxInput("adapt_add_arm", "Add an arm", value = FALSE),
                         checkboxInput("adapt_update_ratio", "Update sample ratio", value = FALSE),
-                        checkboxInput("adapt_extend_time", "Extend duration", value = FALSE),
+                        checkboxInput("adapt_extend_duration", "Extend duration", value = FALSE),
                         checkboxInput("adapt_adjust_n", "Adjust sample size", value = FALSE),
                         
                         tags$script(HTML("

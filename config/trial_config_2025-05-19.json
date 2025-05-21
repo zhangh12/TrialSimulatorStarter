@@ -14,7 +14,7 @@
         "remove_arm": true,
         "add_arm": false,
         "update_ratio": true,
-        "extend_time": false,
+        "extend_duration": false,
         "adjust_n": false
       }
     },
@@ -37,11 +37,11 @@
         "remove_arm": false,
         "add_arm": false,
         "update_ratio": false,
-        "extend_time": true,
+        "extend_duration": true,
         "adjust_n": false
       }
     },
-    "event_3": {
+    "event_1747803074": {
       "name": "final",
       "conditions": {
         "A": {
@@ -51,11 +51,23 @@
         },
         "B": {
           "ID": "B",
+          "Type": "Patient Number",
+          "Value": "1200"
+        },
+        "C": {
+          "ID": "C",
           "Type": "Event Number",
-          "Value": "os:300"
+          "Value": "os:400"
         }
       },
-      "logic": "A | B"
+      "logic": "(A & B) | C",
+      "adaptation": {
+        "remove_arm": false,
+        "add_arm": false,
+        "update_ratio": false,
+        "extend_duration": false,
+        "adjust_n": false
+      }
     }
   },
   "arms": {

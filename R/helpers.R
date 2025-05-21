@@ -1,5 +1,13 @@
 
 
+generate_packages_codes <- function(){
+  glue::glue("library(dplyr)\n", 
+             "library(rpact)\n",
+             "library(ggplot2)\n", 
+             "library(survival)\n",
+             "library(TrialSimulator)\n\n"
+  )
+}
 generate_arm_codes <- function(arms){
   
   codes <- 
@@ -55,6 +63,7 @@ generate_arm_codes <- function(arms){
   codes
   
 }
+
 generate_trial_info_codes <- function(input){
   
   `%|%` <- function(a, b) if (a != "") a else b
@@ -106,7 +115,6 @@ generate_trial_info_codes <- function(input){
 
 }
 
-
 generate_trial_event_codes <- function(trial_events){
   
   codes <- sapply(trial_events, function(event) {
@@ -128,9 +136,43 @@ generate_trial_event_codes <- function(trial_events){
     
     event_variable <- gsub("\\s+", "_", event$name)
     
+    adapt_codes <- ""
+    
+    if(event$adaptation$add_arm){
+      adapt_codes <- glue::glue("{adapt_codes}\n", 
+                                "  # call trial$add_arms(). See add_arms() in TrialSimulator::Trials", 
+                                .trim = FALSE)
+    }
+    
+    if(event$adaptation$remove_arm){
+      adapt_codes <- glue::glue("{adapt_codes}\n", 
+                                "  # call trial$remove_arms(). See remove_arms() in TrialSimulator::Trials", 
+                                .trim = FALSE)
+    }
+    
+    if(event$adaptation$update_ratio){
+      adapt_codes <- glue::glue("{adapt_codes}\n", 
+                                "  # call trial$update_sample_ratio(). See update_sample_ratio() in TrialSimulator::Trials", 
+                                .trim = FALSE)
+    }
+    
+    if(event$adaptation$extend_duration){
+      adapt_codes <- glue::glue("{adapt_codes}\n", 
+                                "  # call trial$set_duration(). See set_duration() in TrialSimulator::Trials", 
+                                .trim = FALSE)
+    }
+    
+    if(event$adaptation$adjust_n){
+      adapt_codes <- glue::glue("{adapt_codes}\n", 
+                                "  # call trial$set_sample_size(). See set_sample_size() in TrialSimulator::Trials", 
+                                .trim = FALSE)
+    }
+    
     glue::glue(
       "{event_variable}_action <- function(trial, event_name){{\n\n",
       "  locked_data <- trial$get_locked_data(event_name)\n\n",
+      "  # custom codes below this line\n", 
+      "  {adapt_codes}\n\n", 
       "  NULL\n\n}}\n\n",
       "{event_variable} <- event(\n",
       "  name = \"{event$name}\", \n",

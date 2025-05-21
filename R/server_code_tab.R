@@ -43,6 +43,9 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       return()
     }
     
+    # ---- Package ----
+    package_block <- generate_packages_codes()
+    
     # ---- Arm ----
     arm_block <- generate_arm_codes(vals$arms)
     
@@ -52,7 +55,8 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     # ---- Trial Event ----
     trial_events_block <- generate_trial_event_codes(vals$trial_events)
     
-    final_code <- glue::glue("\n{arm_block}\n\n", 
+    final_code <- glue::glue("\n{package_block}\n\n", 
+                             "\n{arm_block}\n\n", 
                              "#-----------------------------------------\n\n", 
                              "{trial_info_block}",
                              "#-----------------------------------------\n\n", 
