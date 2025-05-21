@@ -122,7 +122,19 @@ ui <- fluidPage(
                             actionButton("delete_condition", "🗑")
                         ),
                         
-                        hr(),
+                        checkboxInput("adapt_remove_arm", "Remove an arm", value = FALSE),
+                        checkboxInput("adapt_add_arm", "Add an arm", value = FALSE),
+                        checkboxInput("adapt_update_ratio", "Update sample ratio", value = FALSE),
+                        checkboxInput("adapt_extend_time", "Extend duration", value = FALSE),
+                        checkboxInput("adapt_adjust_n", "Adjust sample size", value = FALSE),
+                        
+                        tags$script(HTML("
+                          $(document).on('shiny:connected', function() {
+                            $('#adapt_add_arm').prop('disabled', true);
+                            $('#adapt_adjust_n').prop('disabled', true);
+                          });
+                        ")),
+                        
                         actionButton("add_trial_event", "➕ Add Trial Event")
                       )
                ),

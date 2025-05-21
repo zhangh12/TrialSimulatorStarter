@@ -102,7 +102,14 @@ server_trial_events <- function(input, output, session, vals) {
     vals$trial_events[[event_id]] <- list(
       name = input$event_name,
       conditions = vals$conditions,
-      logic = input$logic_expr
+      logic = input$logic_expr,
+      adaptation = list(
+        remove_arm = input$adapt_remove_arm,
+        add_arm = input$adapt_add_arm,
+        update_ratio = input$adapt_update_ratio,
+        extend_time = input$adapt_extend_time,
+        adjust_n = input$adapt_adjust_n
+      )
     )
     
     vals$conditions <- list()
@@ -110,12 +117,37 @@ server_trial_events <- function(input, output, session, vals) {
     updateTextInput(session, "event_name", value = "")
     updateTextInput(session, "logic_expr", value = "")
     updateRadioButtons(session, "condition_type", selected = character(0))
+    
+    updateCheckboxInput(session, "adapt_remove_arm", value = FALSE)
+    updateCheckboxInput(session, "adapt_add_arm", value = FALSE)
+    updateCheckboxInput(session, "adapt_update_ratio", value = FALSE)
+    updateCheckboxInput(session, "adapt_extend_time", value = FALSE)
+    updateCheckboxInput(session, "adapt_adjust_n", value = FALSE)
+    
   })
   
   output$trial_event_table <- renderDT({
     if (length(vals$trial_events) == 0) return(datatable(data.frame()))
+    
     df <- bind_rows(lapply(vals$trial_events, function(event) {
-      data.frame(Name = event$name, Conditions = length(event$conditions), stringsAsFactors = FALSE)
+      adapt <- event$adaptation %||% list(
+        remove_arm = FALSE,
+        add_arm = FALSE,
+        update_ratio = FALSE,
+        extend_time = FALSE,
+        adjust_n = FALSE
+      )
+      data.frame(
+        Event = event$name,
+        Conditions = length(event$conditions),
+        Logic = event$logic,
+        `Remove Arm` = ifelse(adapt$remove_arm, "Yes", "No"),
+        `Add Arm` = ifelse(adapt$add_arm, "Yes", "No"),
+        `Update Ratio` = ifelse(adapt$update_ratio, "Yes", "No"),
+        `Extend Duration` = ifelse(adapt$extend_time, "Yes", "No"),
+        `Adjust Size` = ifelse(adapt$adjust_n, "Yes", "No"),
+        stringsAsFactors = FALSE, check.names = FALSE
+      )
     }))
     datatable(df, selection = "single", rownames = FALSE)
   })
@@ -123,8 +155,8 @@ server_trial_events <- function(input, output, session, vals) {
   output$trial_event_buttons_ui <- renderUI({
     if (length(vals$trial_events) == 0) return(NULL)
     fluidRow(
-      column(6, actionButton("move_up_trial_event", "⬆️ Move Up", width = "100%")),
-      column(6, actionButton("move_down_trial_event", "⬇️ Move Down", width = "100%")),
+      column(6, actionButton("move_up_trial_event", "⬆️ Move Up", width = "100%", style = "margin-top: 10px;")),
+      column(6, actionButton("move_down_trial_event", "⬇️ Move Down", width = "100%", style = "margin-top: 10px;")),
       column(6, actionButton("view_trial_event", "🔍 View Trial Event", width = "100%", style = "margin-top: 10px;")),
       column(6, actionButton("delete_trial_event", "🗑️ Delete Trial Event", width = "100%", style = "margin-top: 10px;"))
     )

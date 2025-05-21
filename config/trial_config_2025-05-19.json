@@ -1,6 +1,6 @@
 {
   "trial_events": {
-    "event_4": {
+    "event_1747793863": {
       "name": "dose selection",
       "conditions": {
         "A": {
@@ -9,9 +9,16 @@
           "Value": "50"
         }
       },
-      "logic": "A"
+      "logic": "A",
+      "adaptation": {
+        "remove_arm": true,
+        "add_arm": false,
+        "update_ratio": true,
+        "extend_time": false,
+        "adjust_n": false
+      }
     },
-    "event_2": {
+    "event_1747793936": {
       "name": "interim",
       "conditions": {
         "A": {
@@ -25,7 +32,14 @@
           "Value": "os:150"
         }
       },
-      "logic": "A & B"
+      "logic": "A & B",
+      "adaptation": {
+        "remove_arm": false,
+        "add_arm": false,
+        "update_ratio": false,
+        "extend_time": true,
+        "adjust_n": false
+      }
     },
     "event_3": {
       "name": "final",
