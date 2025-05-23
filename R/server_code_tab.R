@@ -101,4 +101,23 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       icon = icon("clipboard")
     )
   })
+  
+  output$code_buttons <- renderUI({
+    req(code_text())
+    tagList(
+      rclipboard::rclipButton(
+        inputId = "run_code",
+        label = tagList(icon("play"), "Run Code"),
+        clipText = code_text(),
+        class = "btn btn-primary"
+      ),
+      rclipboard::rclipButton(
+        inputId = "copy_code",
+        label = tagList(icon("clipboard"), "Copy Code"),
+        clipText = code_text(),
+        class = "btn btn-primary"
+      )
+    )
+  })
+  
 }

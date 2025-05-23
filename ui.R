@@ -153,10 +153,12 @@ ui <- fluidPage(
     # ---- Code Tab ----
     tabPanel("Code",
              rclipboard::rclipboardSetup(),
-             
+             div(style = "margin-top: 20px;",
+                 shinyAce::aceEditor("code", mode = "r", theme = "textmate", readOnly = TRUE, height = "450px")
+             ),
              fluidRow(
-               column(6,
-                      div(style = "margin-top: 10px;",
+               column(12,
+                      div(style = "margin-top: 10px; display: flex; gap: 10px; justify-content: flex-start;",
                           switchInput(
                             inputId = "manual_edit_mode",
                             label = "Edit",
@@ -164,15 +166,9 @@ ui <- fluidPage(
                             onLabel = "ON",
                             offLabel = "OFF",
                             size = "small"
-                          )
+                          ),
+                          uiOutput("code_buttons")
                       )
-               )
-             ),
-             
-             fluidRow(
-               column(12,
-                      shinyAce::aceEditor("code", mode = "r", theme = "textmate", readOnly = TRUE, height = "300px"),
-                      uiOutput("copy_code_button")
                )
              )
     ),
