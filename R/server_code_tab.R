@@ -116,19 +116,42 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     updateTabsetPanel(session, inputId = "tabs", selected = "Output")
     
     output$console_output <- renderPrint({
-      result <- tryCatch({
-        eval_env <- new.env(parent = globalenv())
-        # Capture plot
+      eval_env <- new.env(parent = globalenv())
+      
+      out_text <- NULL
+      msg_text <- NULL
+      warn_text <- NULL
+      
+      tryCatch({
         output$code_plot <- renderPlot({
           eval(parse(text = code_text()), envir = eval_env)
         })
-        # Capture textual output
-        capture.output(eval(parse(text = code_text()), envir = eval_env))
+        
+        # Capture printed output
+        out_text <- capture.output({
+          withCallingHandlers(
+            eval(parse(text = code_text()), envir = eval_env),
+            message = function(m) {
+              msg_text <<- c(msg_text, paste0("", conditionMessage(m)))
+              invokeRestart("muffleMessage")
+            },
+            warning = function(w) {
+              warn_text <<- c(warn_text, paste0("Warning: ", conditionMessage(w)))
+              invokeRestart("muffleWarning")
+            }
+          )
+        })
       }, error = function(e) {
         output$code_plot <- renderPlot(NULL)
-        paste("Error:", e$message)
+        out_text <<- paste("Error:", e$message)
       })
-      cat(result, sep = "\n")
+      
+      cat(
+        paste(
+          c(out_text, msg_text, warn_text),
+          collapse = "\n"
+        )
+      )
     })
   })
   
