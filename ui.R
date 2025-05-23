@@ -155,7 +155,7 @@ ui <- fluidPage(
     tabPanel("Code",
              rclipboard::rclipboardSetup(),
              div(style = "margin-top: 20px;",
-                 shinyAce::aceEditor("code", mode = "r", theme = "textmate", readOnly = TRUE, height = "450px")
+                 shinyAce::aceEditor("code", mode = "r", theme = "textmate", readOnly = TRUE, height = "420px")
              ),
              fluidRow(
                column(12,
@@ -177,13 +177,13 @@ ui <- fluidPage(
     tabPanel("Output",
              fluidRow(
                column(6,
-                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 450px; overflow-y: auto;",
+                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 500px; overflow-y: auto;",
                           h4("Console Output:"),
                           verbatimTextOutput("console_output")
                       )
                ),
                column(6,
-                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 450px;",
+                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 500px;",
                           h4("Plot Output:"),
                           plotOutput("code_plot")
                       )
