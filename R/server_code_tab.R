@@ -50,7 +50,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     arm_block <- generate_arm_codes(vals$arms)
     
     # ---- Trial Info ----
-    trial_info_block <- generate_trial_info_codes(input)
+    trial_info_block <- generate_trial_info_codes(input, vals$arms)
     
     # ---- Trial Event ----
     trial_events_block <- generate_trial_event_codes(vals$trial_events)
@@ -58,7 +58,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     final_code <- glue::glue("\n{package_block}\n\n", 
                              "\n{arm_block}\n\n", 
                              "#-----------------------------------------\n\n", 
-                             "{trial_info_block}",
+                             "{trial_info_block}\n\n",
                              "#-----------------------------------------\n\n", 
                              "{trial_events_block}",
                              .trim = FALSE)
@@ -91,26 +91,15 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     }
   })
   
-  # --- Copy button
-  output$copy_code_button <- renderUI({
-    req(code_text())
-    rclipboard::rclipButton(
-      inputId = "copy_code",
-      label = "Copy Code",
-      clipText = code_text(),
-      icon = icon("clipboard")
-    )
-  })
-  
   output$code_buttons <- renderUI({
     req(code_text())
     tagList(
-      rclipboard::rclipButton(
+      actionButton(
         inputId = "run_code",
         label = tagList(icon("play"), "Run Code"),
-        clipText = code_text(),
         class = "btn btn-primary"
       ),
+      
       rclipboard::rclipButton(
         inputId = "copy_code",
         label = tagList(icon("clipboard"), "Copy Code"),
@@ -119,5 +108,29 @@ server_code_tab <- function(input, output, session, vals, code_text) {
       )
     )
   })
+  
+  # --- Run Code Button Logic ---
+  observeEvent(input$run_code, {
+    req(code_text())
+    
+    updateTabsetPanel(session, inputId = "tabs", selected = "Output")
+    
+    output$console_output <- renderPrint({
+      result <- tryCatch({
+        eval_env <- new.env(parent = globalenv())
+        # Capture plot
+        output$code_plot <- renderPlot({
+          eval(parse(text = code_text()), envir = eval_env)
+        })
+        # Capture textual output
+        capture.output(eval(parse(text = code_text()), envir = eval_env))
+      }, error = function(e) {
+        output$code_plot <- renderPlot(NULL)
+        paste("Error:", e$message)
+      })
+      cat(result, sep = "\n")
+    })
+  })
+  
   
 }

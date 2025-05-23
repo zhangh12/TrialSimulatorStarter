@@ -31,6 +31,7 @@ ui <- fluidPage(
   
   # ---- Main Content Tabs ----
   tabsetPanel(
+    id = "tabs",
     
     # ---- Trial Info Tab
     tabPanel(
@@ -176,13 +177,13 @@ ui <- fluidPage(
     tabPanel("Output",
              fluidRow(
                column(6,
-                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto;",
+                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 450px; overflow-y: auto;",
                           h4("Console Output:"),
                           verbatimTextOutput("console_output")
                       )
                ),
                column(6,
-                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 300px;",
+                      div(style = "margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 450px;",
                           h4("Plot Output:"),
                           plotOutput("code_plot")
                       )

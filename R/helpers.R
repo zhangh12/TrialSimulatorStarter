@@ -5,9 +5,10 @@ generate_packages_codes <- function(){
              "library(rpact)\n",
              "library(ggplot2)\n", 
              "library(survival)\n",
-             "library(TrialSimulator)\n\n"
+             "library(TrialSimulator)"
   )
 }
+
 generate_arm_codes <- function(arms){
   
   codes <- 
@@ -64,7 +65,7 @@ generate_arm_codes <- function(arms){
   
 }
 
-generate_trial_info_codes <- function(input){
+generate_trial_info_codes <- function(input, arms){
   
   `%|%` <- function(a, b) if (a != "") a else b
   
@@ -110,6 +111,19 @@ generate_trial_info_codes <- function(input){
                        .trim = FALSE)
     }
   }
+  
+  arms_info <- 
+    lapply(arms, 
+           function(arm){
+             data.frame(arm_variable = gsub("\\s+", "_", arm$label), ratio = arm$ratio)
+           }) %>% 
+    do.call(rbind, .)
+  
+  add_arms_block <- glue::glue("trial$add_arms(sample_ratio = c({paste0(arms_info$ratio, collapse = \", \")}), {paste0(arms_info$arm_variable, collapse = \", \")})")
+  
+  codes <- glue::glue("{codes}\n", 
+                      "{add_arms_block}", 
+                      .trim = FALSE)
   
   codes
 

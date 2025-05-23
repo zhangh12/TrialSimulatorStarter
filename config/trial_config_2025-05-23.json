@@ -1,0 +1,163 @@
+{
+  "trial_events": {
+    "event_1747974615": {
+      "name": "dose selection",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Event Number",
+          "Value": "surrogate:300"
+        }
+      },
+      "logic": "A",
+      "adaptation": {
+        "remove_arm": true,
+        "add_arm": false,
+        "update_ratio": true,
+        "extend_duration": false,
+        "adjust_n": false
+      }
+    },
+    "event_1747974591": {
+      "name": "interim",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Event Number",
+          "Value": "pfs:300"
+        }
+      },
+      "logic": "A",
+      "adaptation": {
+        "remove_arm": false,
+        "add_arm": false,
+        "update_ratio": false,
+        "extend_duration": true,
+        "adjust_n": false
+      }
+    },
+    "event_1747974683": {
+      "name": "final",
+      "conditions": {
+        "A": {
+          "ID": "A",
+          "Type": "Patient Number",
+          "Value": "1000"
+        },
+        "B": {
+          "ID": "B",
+          "Type": "Event Number",
+          "Value": "os:300"
+        },
+        "C": {
+          "ID": "C",
+          "Type": "Calendar Time",
+          "Value": "28"
+        },
+        "D": {
+          "ID": "D",
+          "Type": "Event Number",
+          "Value": "pfs:520"
+        }
+      },
+      "logic": "A & B & (C | D)",
+      "adaptation": {
+        "remove_arm": false,
+        "add_arm": false,
+        "update_ratio": false,
+        "extend_duration": false,
+        "adjust_n": false
+      }
+    }
+  },
+  "arms": {
+    "arm_1747974286": {
+      "label": "placebo",
+      "ratio": "1",
+      "endpoints": {
+        "ep_1747974217": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 7.1"
+        },
+        "ep_1747974231": {
+          "name": "c('os')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 18.2"
+        },
+        "ep_1747974283": {
+          "name": "c('surrogate')",
+          "type": "c('non-tte')",
+          "readout": "c(surrogate = 5/52*12)",
+          "generator": "rbinom",
+          "args": "size = 1,\nprob = .05"
+        }
+      }
+    },
+    "arm_1747974289": {
+      "label": "low dose",
+      "ratio": "1",
+      "endpoints": {
+        "ep_1747974217": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 6.7"
+        },
+        "ep_1747974231": {
+          "name": "c('os')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 17.5"
+        },
+        "ep_1747974283": {
+          "name": "c('surrogate')",
+          "type": "c('non-tte')",
+          "readout": "c(surrogate = 5/52*12)",
+          "generator": "rbinom",
+          "args": "size = 1,\nprob = .12"
+        }
+      }
+    },
+    "arm_1747974372": {
+      "label": "high dose",
+      "ratio": "1",
+      "endpoints": {
+        "ep_1747974217": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 7.1"
+        },
+        "ep_1747974231": {
+          "name": "c('os')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2) / 18.2"
+        },
+        "ep_1747974283": {
+          "name": "c('surrogate')",
+          "type": "c('non-tte')",
+          "readout": "c(surrogate = 5/52*12)",
+          "generator": "rbinom",
+          "args": "size = 1,\nprob = .12"
+        }
+      }
+    }
+  },
+  "trial_info": {
+    "n": "1000",
+    "duration": "40",
+    "accrual_rate": "data.frame(end_time = c(10, Inf), \n                   piecewise_rate = c(30, 50))\n",
+    "dropout": "rweibull",
+    "dropout_args": "shape = 2.139, scale = 38.343"
+  }
+}
