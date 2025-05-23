@@ -2,7 +2,7 @@
 
 generate_packages_codes <- function(){
   glue::glue("library(dplyr)\n", 
-             "library(rpact)\n",
+             "# library(rpact, quietly = TRUE)\n",
              "library(ggplot2)\n", 
              "library(survival)\n",
              "library(TrialSimulator)"
