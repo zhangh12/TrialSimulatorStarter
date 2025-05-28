@@ -38,10 +38,14 @@ server_code_tab <- function(input, output, session, vals, code_text) {
   regenerate_code <- function() {
     if (manual_mode()) return()
     
-    if (length(vals$trial_events) == 0 && length(vals$arms) == 0) {
+    info <- vals$dropout_info()
+    
+    if ((length(vals$trial_events) == 0 && length(vals$arms) == 0) || !info$ready) {
       updateAceEditor(session, "code", value = "")
       return()
     }
+    
+    dropout_code <- info$string
     
     # ---- Package ----
     package_block <- generate_packages_codes()
@@ -50,7 +54,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     arm_block <- generate_arm_codes(vals$arms)
     
     # ---- Trial Info ----
-    trial_info_block <- generate_trial_info_codes(input, vals$arms)
+    trial_info_block <- generate_trial_info_codes(input, vals$arms, info$string)
     
     # ---- Trial Event ----
     trial_events_block <- generate_trial_event_codes(vals$trial_events)

@@ -1,24 +1,24 @@
 {
   "trial_events": {
-    "event_1747974615": {
+    "event_1748472994": {
       "name": "dose selection",
       "conditions": {
         "A": {
           "ID": "A",
           "Type": "Event Number",
-          "Value": "surrogate:300"
+          "Value": "or:300"
         }
       },
       "logic": "A",
       "adaptation": {
         "remove_arm": true,
         "add_arm": false,
-        "update_ratio": true,
+        "update_ratio": false,
         "extend_duration": false,
         "adjust_n": false
       }
     },
-    "event_1747974591": {
+    "event_1748473014": {
       "name": "interim",
       "conditions": {
         "A": {
@@ -32,35 +32,30 @@
         "remove_arm": false,
         "add_arm": false,
         "update_ratio": false,
-        "extend_duration": true,
+        "extend_duration": false,
         "adjust_n": false
       }
     },
-    "event_1747974683": {
+    "event_1748473075": {
       "name": "final",
       "conditions": {
         "A": {
           "ID": "A",
-          "Type": "Patient Number",
-          "Value": "1000"
-        },
-        "B": {
-          "ID": "B",
           "Type": "Event Number",
           "Value": "os:300"
         },
-        "C": {
-          "ID": "C",
+        "B": {
+          "ID": "B",
           "Type": "Calendar Time",
           "Value": "28"
         },
-        "D": {
-          "ID": "D",
+        "C": {
+          "ID": "C",
           "Type": "Event Number",
           "Value": "pfs:520"
         }
       },
-      "logic": "A & B & (C | D)",
+      "logic": "A & (B | C)",
       "adaptation": {
         "remove_arm": false,
         "add_arm": false,
@@ -71,84 +66,84 @@
     }
   },
   "arms": {
-    "arm_1747974286": {
-      "label": "placebo",
+    "arm_1748473365": {
+      "label": "pbo",
       "ratio": "1",
       "endpoints": {
-        "ep_1747974217": {
+        "ep_1748473326": {
           "name": "c('pfs')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 7.1"
+          "args": "rate = log(2)/6.7"
         },
-        "ep_1747974231": {
+        "ep_1748473336": {
           "name": "c('os')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 18.2"
+          "args": "rate =log(2)/17.5"
         },
-        "ep_1747974283": {
-          "name": "c('surrogate')",
+        "ep_1748473362": {
+          "name": "c('or')",
           "type": "c('non-tte')",
-          "readout": "c(surrogate = 5/52*12)",
+          "readout": "c(or = 1.1)",
           "generator": "rbinom",
-          "args": "size = 1,\nprob = .05"
+          "args": "size=1, prob=.05"
         }
       }
     },
-    "arm_1747974289": {
-      "label": "low dose",
+    "arm_1748473367": {
+      "label": "low",
       "ratio": "1",
       "endpoints": {
-        "ep_1747974217": {
+        "ep_1748473326": {
           "name": "c('pfs')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 6.7"
+          "args": "rate = log(2)/5"
         },
-        "ep_1747974231": {
+        "ep_1748473336": {
           "name": "c('os')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 17.5"
+          "args": "rate=log(2)/14"
         },
-        "ep_1747974283": {
-          "name": "c('surrogate')",
+        "ep_1748473362": {
+          "name": "c('or')",
           "type": "c('non-tte')",
-          "readout": "c(surrogate = 5/52*12)",
+          "readout": "c(or = 1.1)",
           "generator": "rbinom",
-          "args": "size = 1,\nprob = .12"
+          "args": "size=1, prob=.12"
         }
       }
     },
-    "arm_1747974372": {
-      "label": "high dose",
+    "arm_1748473422": {
+      "label": "high",
       "ratio": "1",
       "endpoints": {
-        "ep_1747974217": {
+        "ep_1748473326": {
           "name": "c('pfs')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 7.1"
+          "args": "rate = log(2)/7.1"
         },
-        "ep_1747974231": {
+        "ep_1748473336": {
           "name": "c('os')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate = log(2) / 18.2"
+          "args": "rate=log(2)/18.2"
         },
-        "ep_1747974283": {
-          "name": "c('surrogate')",
+        "ep_1748473362": {
+          "name": "c('or')",
           "type": "c('non-tte')",
-          "readout": "c(surrogate = 5/52*12)",
+          "readout": "c(or = 1.1)",
           "generator": "rbinom",
-          "args": "size = 1,\nprob = .12"
+          "args": "size=1, prob=.13"
         }
       }
     }
@@ -156,8 +151,8 @@
   "trial_info": {
     "n": "1000",
     "duration": "40",
-    "accrual_rate": "data.frame(end_time = c(10, Inf), \n                   piecewise_rate = c(30, 50))\n",
-    "dropout": "rweibull",
-    "dropout_args": "shape = 2.139, scale = 38.343"
+    "accrual_rate": "data.frame(end_time = c(10, Inf), piecewise_rate = c(30, 50))",
+    "dropout": "Weibull",
+    "dropout_args": {}
   }
 }

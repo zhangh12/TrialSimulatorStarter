@@ -1,5 +1,29 @@
 source('packages.R')
 
+dropout_choices <- c(
+  "Beta"        = "beta",
+  "Binomial"    = "binom",
+  "Cauchy"      = "cauchy",
+  "Chi-squared" = "chisq",
+  "Exponential" = "exp",
+  "F"           = "f",
+  "Gamma"       = "gamma",
+  "Geometric"   = "geom",
+  "Hypergeom."  = "hyper",
+  "Log-normal"  = "lnorm",
+  "Logistic"    = "logis",
+  "Multinomial" = "multinom",
+  "Neg. Binom." = "nbinom",
+  "Normal"      = "norm",
+  "Poisson"     = "pois",
+  "Signed Rank" = "signrank",
+  "t"           = "t",
+  "Uniform"     = "unif",
+  "Weibull"     = "weibull",
+  "Wilcoxon"    = "wilcox"
+)
+
+
 ui <- fluidPage(
   
   shinyjs::useShinyjs(),
@@ -38,8 +62,18 @@ ui <- fluidPage(
         ),
         column(6,
                wellPanel(
-                 textInput("dropout", "Dropout"),
-                 textAreaInput("dropout_args", "Dropout Args", rows = 2)
+                 selectizeInput(
+                   "dropout", "Dropout Distribution",
+                   choices = c("None" = "", "Custom", names(dropout_choices)),  # allow no selection
+                   selected = "",
+                   options = list(
+                     placeholder = "Select dropout distribution",
+                     create = FALSE
+                   )
+                 ),
+                 helpText("Tip: Select 'Custom' if none of the predefined distributions apply, or leave blank for no dropout."),
+                 uiOutput("dropout_args_ui")
+                 
                )
         )
       )

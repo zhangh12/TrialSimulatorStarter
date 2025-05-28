@@ -65,7 +65,7 @@ generate_arm_codes <- function(arms){
   
 }
 
-generate_trial_info_codes <- function(input, arms){
+generate_trial_info_codes <- function(input, arms, dropout){
   
   `%|%` <- function(a, b) if (a != "") a else b
   
@@ -79,8 +79,6 @@ generate_trial_info_codes <- function(input, arms){
   
   comment_accrual_rate <- ifelse(input$accrual_rate == "", "  # accrual rate is not specified by users. Use a default one.\n", "")
   accrual_rate <- input$accrual_rate %|% "    data.frame(\n      end_time = c(6, 12, Inf), \n      piecewise_rate = c(30, 40, 50)\n    )"
-  dropout <- input$dropout
-  dropout_args <- input$dropout_args
   
   codes <- glue::glue(
     "trial <- trial(\n", 
@@ -93,24 +91,10 @@ generate_trial_info_codes <- function(input, arms){
     "  duration = {trial_duration}, \n", 
     "  enroller = StaggeredRecruiter, \n", 
     "{comment_accrual_rate}", 
-    "  accrual_rate = \n{accrual_rate}",
+    "  accrual_rate = \n{accrual_rate}\n",
+    "  {dropout})\n", 
     .trim = FALSE
   )
-  
-  if (dropout == ""){
-    codes <- glue::glue("{codes}\n)\n\n", .trim = FALSE)
-  } else {
-    codes <- glue::glue("{codes}, \n", 
-                     "  dropout = {dropout}", 
-                     .trim = FALSE)
-    if (dropout_args == "") {
-      codes <- glue::glue("{codes})\n\n", .trim = FALSE)
-    } else {
-      codes <- glue::glue("{codes}, \n", 
-                       "  {dropout_args})\n\n", 
-                       .trim = FALSE)
-    }
-  }
   
   arms_info <- 
     lapply(arms, 
