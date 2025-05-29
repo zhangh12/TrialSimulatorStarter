@@ -5,7 +5,7 @@ account: bx7ttm-han-zhang
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14750374
-bundleId: 10360253
+bundleId: 10360274
 url: https://bx7ttm-han-zhang.shinyapps.io/trialsimulatorstarter/
 version: 1
 asMultiple: FALSE
