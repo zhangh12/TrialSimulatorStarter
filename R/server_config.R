@@ -1,17 +1,18 @@
+
 server_config <- function(input, output, session, vals) {
-  
+
   `%||%` <- function(a, b) if (!is.null(a)) a else b
-  
+
   observeEvent(input$load_config, {
     req(input$load_config)
-    
+
     tryCatch({
       path <- input$load_config$datapath
       stopifnot(is.character(path), file.exists(path))
-      
+
       loaded <- jsonlite::read_json(path, simplifyVector = FALSE)
       if (!is.list(loaded)) stop("Invalid configuration structure")
-      
+
       # 🔄 FULL RESET of all state
       vals$arms <- list()
       vals$trial_events <- list()
@@ -21,54 +22,50 @@ server_config <- function(input, output, session, vals) {
       vals$ep_table_raw <- NULL
       vals$editing_arm_id <- NULL
       vals$editing_ep_id <- NULL
-      
+
       # 🧹 Clear all UI inputs
       updateTextInput(session, "arm_label", value = "")
       updateTextInput(session, "arm_ratio", value = "")
       updateTextInput(session, "ep_name", value = "")
       updateTextInput(session, "ep_generator", value = "")
       updateTextInput(session, "ep_args", value = "")
-      
+
       updateTextInput(session, "event_name", value = "")
       updateTextInput(session, "logic_expr", value = "")
       updateRadioButtons(session, "condition_type", selected = character(0))
-      
+
       # ✅ Load config into now-clean environment
       vals$trial_events <- loaded$trial_events %||% list()
-      
       vals$arms <- loaded$arms %||% list()
-      
+
       # display values on Trial Info tab
       trial_info <- loaded$trial_info
       updateTextInput(session, "trial_n", value = trial_info$n %||% "")
       updateTextInput(session, "trial_duration", value = trial_info$duration %||% "")
       updateTextAreaInput(session, "accrual_rate", value = trial_info$accrual_rate %||% "")
-      
       # Update the dropout selection first
       updateSelectizeInput(session, "dropout", selected = trial_info$dropout %||% "")
-      
+
       # Defer population of arguments until UI is rendered
       observeEvent(input$dropout, {
-        if (input$dropout == "Custom") {
-          shinyjs::delay(200, {
+        shinyjs::delay(500, {
+          if (input$dropout == "Custom") {
             updateTextAreaInput(session, "dropout_custom_args", value = trial_info$dropout_custom_args %||% "")
-          })
-        } else if (!is.null(trial_info$dropout_args)) {
-          shinyjs::delay(200, {
+          } else if (!is.null(trial_info$dropout_args)) {
             lapply(names(trial_info$dropout_args), function(arg_name) {
               updateTextInput(session, arg_name, value = trial_info$dropout_args[[arg_name]])
             })
-          })
-        }
+          }
+        })
       }, once = TRUE)
-      
+
       showNotification("✅ Config loaded successfully", type = "message")
-      
+
     }, error = function(e) {
       showNotification(paste("❌ Failed to load config:", e$message), type = "error")
     })
   })
-  
+
   output$save_config <- downloadHandler(
     filename = function() {
       paste0("trial_config_", Sys.Date(), ".json")
@@ -93,7 +90,7 @@ server_config <- function(input, output, session, vals) {
       )
     }
   )
-  
+
   # Show confirmation modal when user clicks Restart
   observeEvent(input$reset_app, {
     showModal(modalDialog(
@@ -106,11 +103,11 @@ server_config <- function(input, output, session, vals) {
       easyClose = TRUE
     ))
   })
-  
+
   # Perform reset if confirmed
   observeEvent(input$confirm_reset, {
     removeModal()
-    
+
     # Reset internal states
     vals$arms <- list()
     vals$trial_events <- list()
@@ -121,7 +118,7 @@ server_config <- function(input, output, session, vals) {
     vals$editing_arm_id <- NULL
     vals$editing_ep_id <- NULL
     vals$trial_info <- list()
-    
+
     # Clear static inputs
     updateTextInput(session, "arm_label", value = "")
     updateTextInput(session, "arm_ratio", value = "")
@@ -135,7 +132,7 @@ server_config <- function(input, output, session, vals) {
     updateTextInput(session, "trial_duration", value = "")
     updateTextAreaInput(session, "accrual_rate", value = "")
     updateSelectizeInput(session, "dropout", selected = "")
-    
+
     # Reset dynamic dropout inputs safely
     shinyjs::delay(200, {
       updateTextAreaInput(session, "dropout_custom_args", value = "")
@@ -145,8 +142,7 @@ server_config <- function(input, output, session, vals) {
         }
       })
     })
-    
+
     showNotification("🔁 App reset successfully", type = "message")
   })
-  
 }
