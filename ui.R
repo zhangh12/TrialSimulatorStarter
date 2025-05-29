@@ -9,18 +9,15 @@ dropout_choices <- c(
   "F"           = "f",
   "Gamma"       = "gamma",
   "Geometric"   = "geom",
-  "Hypergeom."  = "hyper",
   "Log-normal"  = "lnorm",
   "Logistic"    = "logis",
   "Multinomial" = "multinom",
   "Neg. Binom." = "nbinom",
   "Normal"      = "norm",
   "Poisson"     = "pois",
-  "Signed Rank" = "signrank",
   "t"           = "t",
   "Uniform"     = "unif",
-  "Weibull"     = "weibull",
-  "Wilcoxon"    = "wilcox"
+  "Weibull"     = "weibull"
 )
 
 
@@ -64,14 +61,14 @@ ui <- fluidPage(
                wellPanel(
                  selectizeInput(
                    "dropout", "Dropout Distribution",
-                   choices = c("None" = "", "Custom", names(dropout_choices)),  # allow no selection
-                   selected = "",
+                   choices = c("No dropout" = "no_dropout", "Custom", names(dropout_choices)),  # allow no selection
+                   selected = "no_dropout",
                    options = list(
                      placeholder = "Select dropout distribution",
                      create = FALSE
                    )
                  ),
-                 helpText("Tip: Select 'Custom' if none of the predefined distributions apply, or leave blank for no dropout."),
+                 helpText("Tip: Select 'Custom' if none of the predefined distributions apply. Select 'No dropout' if dropout is not considered in simulation."),
                  uiOutput("dropout_args_ui")
                  
                )

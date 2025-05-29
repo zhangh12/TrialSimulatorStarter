@@ -91,8 +91,8 @@ generate_trial_info_codes <- function(input, arms, dropout){
     "  duration = {trial_duration}, \n", 
     "  enroller = StaggeredRecruiter, \n", 
     "{comment_accrual_rate}", 
-    "  accrual_rate = \n{accrual_rate}\n",
-    "  {dropout})\n", 
+    "  accrual_rate = \n    {accrual_rate}",
+    "{dropout})\n", 
     .trim = FALSE
   )
   

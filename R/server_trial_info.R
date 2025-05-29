@@ -6,7 +6,9 @@ server_trial_info <- function(input, output, session, vals) {
     output$dropout_args_ui <- renderUI({
       req(input$dropout)
 
-      if (input$dropout == "") return(NULL)
+      if (input$dropout == "no_dropout") {
+        return(helpText("No dropout will be applied to this simulation."))
+      }
 
       if (input$dropout == "Custom") {
         return(textAreaInput("dropout_custom_args", "Custom Arguments (e.g., arg1 = 1, arg2 = 2)", rows = 2))
@@ -54,6 +56,9 @@ server_trial_info <- function(input, output, session, vals) {
   observe({
     vals$dropout_info <- reactive({
       dist_input <- input$dropout %||% ""
+      
+      # Normalize blank to "no_dropout"
+      if (dist_input == "") dist_input <- "no_dropout"
 
       dropout_choices <- c(
         "Beta"        = "beta",
@@ -75,8 +80,13 @@ server_trial_info <- function(input, output, session, vals) {
         "Weibull"     = "weibull"
       )
 
+      valid_inputs <- c("no_dropout", "Custom", names(dropout_choices))
+      if (!dist_input %in% valid_inputs) {
+        stop(paste("Invalid dropout label:", dist_input))
+      }
+
       # Case 1: No dropout
-      if (dist_input == "") {
+      if (dist_input == "no_dropout") {
         return(list(string = "", ready = TRUE))
       }
 
@@ -84,7 +94,7 @@ server_trial_info <- function(input, output, session, vals) {
       if (dist_input == "Custom") {
         custom_args <- trimws(input$dropout_custom_args %||% "")
         out_string <- if (nzchar(custom_args)) {
-          paste0(", dropout = custom, ", custom_args)
+          paste0(", \n  dropout = custom, ", custom_args)
         } else {
           ", custom"
         }
@@ -108,7 +118,7 @@ server_trial_info <- function(input, output, session, vals) {
       if (any(arg_values == "")) return(list(string = "", ready = FALSE))
 
       arg_str <- paste(paste0(names(arg_values), " = ", arg_values), collapse = ", ")
-      return(list(string = paste0(", dropout = ", rng_name, ", ", arg_str), ready = TRUE))
+      return(list(string = paste0(", \n  dropout = ", rng_name, ", ", arg_str), ready = TRUE))
     })
   })
 }
