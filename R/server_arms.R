@@ -37,7 +37,7 @@ server_arms <- function(input, output, session, vals) {
       readout_id <- paste0("readout_", i)
       
       tte_value <- input[[tte_id]] %||% FALSE
-      readout_value <- input[[readout_id]] %||% ""
+      readout_value <- isolate(input[[readout_id]] %||% "")
       
       readout_input <- tags$input(
         id = readout_id,
