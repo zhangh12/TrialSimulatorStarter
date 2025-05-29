@@ -66,82 +66,82 @@
     }
   },
   "arms": {
-    "arm_1748473365": {
+    "arm_1748485820": {
       "label": "pbo",
       "ratio": "1",
       "endpoints": {
-        "ep_1748473326": {
-          "name": "c('pfs')",
-          "type": "c('tte')",
-          "readout": "",
-          "generator": "rexp",
-          "args": "rate = log(2)/6.7"
-        },
-        "ep_1748473336": {
-          "name": "c('os')",
-          "type": "c('tte')",
-          "readout": "",
-          "generator": "rexp",
-          "args": "rate =log(2)/17.5"
-        },
-        "ep_1748473362": {
-          "name": "c('or')",
-          "type": "c('non-tte')",
-          "readout": "c(or = 1.1)",
-          "generator": "rbinom",
-          "args": "size=1, prob=.05"
-        }
-      }
-    },
-    "arm_1748473367": {
-      "label": "low",
-      "ratio": "1",
-      "endpoints": {
-        "ep_1748473326": {
+        "ep_1748485774": {
           "name": "c('pfs')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
           "args": "rate = log(2)/5"
         },
-        "ep_1748473336": {
+        "ep_1748485787": {
           "name": "c('os')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate=log(2)/14"
+          "args": "rate = log(2)/14"
         },
-        "ep_1748473362": {
+        "ep_1748485818": {
           "name": "c('or')",
           "type": "c('non-tte')",
-          "readout": "c(or = 1.1)",
+          "readout": "c(or = 5/52*12)",
+          "generator": "rbinom",
+          "args": "size=1, prob=.05"
+        }
+      }
+    },
+    "arm_1748485830": {
+      "label": "low",
+      "ratio": "1",
+      "endpoints": {
+        "ep_1748485774": {
+          "name": "c('pfs')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2)/6.7"
+        },
+        "ep_1748485787": {
+          "name": "c('os')",
+          "type": "c('tte')",
+          "readout": "",
+          "generator": "rexp",
+          "args": "rate = log(2)/17.5"
+        },
+        "ep_1748485818": {
+          "name": "c('or')",
+          "type": "c('non-tte')",
+          "readout": "c(or = 5/52*12)",
           "generator": "rbinom",
           "args": "size=1, prob=.12"
         }
       }
     },
-    "arm_1748473422": {
+    "arm_1748485896": {
       "label": "high",
       "ratio": "1",
       "endpoints": {
-        "ep_1748473326": {
+        "ep_1748485774": {
           "name": "c('pfs')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
           "args": "rate = log(2)/7.1"
         },
-        "ep_1748473336": {
+        "ep_1748485787": {
           "name": "c('os')",
           "type": "c('tte')",
           "readout": "",
           "generator": "rexp",
-          "args": "rate=log(2)/18.2"
+          "args": "rate = log(2)/18.2"
         },
-        "ep_1748473362": {
+        "ep_1748485818": {
           "name": "c('or')",
           "type": "c('non-tte')",
-          "readout": "c(or = 1.1)",
+          "readout": "c(or = 5/52*12)",
           "generator": "rbinom",
           "args": "size=1, prob=.13"
         }
@@ -153,6 +153,11 @@
     "duration": "40",
     "accrual_rate": "data.frame(end_time = c(10, Inf), piecewise_rate = c(30, 50))",
     "dropout": "Weibull",
-    "dropout_args": {}
+    "dropout_custom_args": "",
+    "dropout_args": {
+      "dropout_arg_rate": ".6",
+      "dropout_arg_shape": "2.139",
+      "dropout_arg_scale": "38.343"
+    }
   }
 }

@@ -43,8 +43,24 @@ server_config <- function(input, output, session, vals) {
       updateTextInput(session, "trial_n", value = trial_info$n %||% "")
       updateTextInput(session, "trial_duration", value = trial_info$duration %||% "")
       updateTextAreaInput(session, "accrual_rate", value = trial_info$accrual_rate %||% "")
-      updateTextInput(session, "dropout", value = trial_info$dropout %||% "")
-      updateTextAreaInput(session, "dropout_args", value = trial_info$dropout_args %||% "")
+      
+      # Update the dropout selection first
+      updateSelectizeInput(session, "dropout", selected = trial_info$dropout %||% "")
+      
+      # Defer population of arguments until UI is rendered
+      observeEvent(input$dropout, {
+        if (input$dropout == "Custom") {
+          shinyjs::delay(200, {
+            updateTextAreaInput(session, "dropout_custom_args", value = trial_info$dropout_custom_args %||% "")
+          })
+        } else if (!is.null(trial_info$dropout_args)) {
+          shinyjs::delay(200, {
+            lapply(names(trial_info$dropout_args), function(arg_name) {
+              updateTextInput(session, arg_name, value = trial_info$dropout_args[[arg_name]])
+            })
+          })
+        }
+      }, once = TRUE)
       
       showNotification("✅ Config loaded successfully", type = "message")
       
@@ -67,7 +83,8 @@ server_config <- function(input, output, session, vals) {
             duration = input$trial_duration,
             accrual_rate = input$accrual_rate,
             dropout = input$dropout,
-            dropout_args = input$dropout_args
+            dropout_custom_args = input$dropout_custom_args %||% "",
+            dropout_args = reactiveValuesToList(input)[grep("^dropout_arg_", names(input))]
           )
         ),
         path = file,
@@ -94,7 +111,7 @@ server_config <- function(input, output, session, vals) {
   observeEvent(input$confirm_reset, {
     removeModal()
     
-    # reset all states
+    # Reset internal states
     vals$arms <- list()
     vals$trial_events <- list()
     vals$conditions <- list()
@@ -105,22 +122,29 @@ server_config <- function(input, output, session, vals) {
     vals$editing_ep_id <- NULL
     vals$trial_info <- list()
     
-    # clear all UI inputs
+    # Clear static inputs
     updateTextInput(session, "arm_label", value = "")
     updateTextInput(session, "arm_ratio", value = "")
     updateTextInput(session, "ep_name", value = "")
     updateTextInput(session, "ep_generator", value = "")
     updateTextInput(session, "ep_args", value = "")
-    
     updateTextInput(session, "event_name", value = "")
     updateTextInput(session, "logic_expr", value = "")
     updateRadioButtons(session, "condition_type", selected = character(0))
-    
     updateTextInput(session, "trial_n", value = "")
     updateTextInput(session, "trial_duration", value = "")
     updateTextAreaInput(session, "accrual_rate", value = "")
-    updateTextInput(session, "dropout", value = "")
-    updateTextAreaInput(session, "dropout_args", value = "")
+    updateSelectizeInput(session, "dropout", selected = "")
+    
+    # Reset dynamic dropout inputs safely
+    shinyjs::delay(200, {
+      updateTextAreaInput(session, "dropout_custom_args", value = "")
+      lapply(names(input), function(nm) {
+        if (startsWith(nm, "dropout_arg_")) {
+          updateTextInput(session, nm, value = "")
+        }
+      })
+    })
     
     showNotification("🔁 App reset successfully", type = "message")
   })
