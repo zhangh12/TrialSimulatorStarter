@@ -124,14 +124,14 @@ ui <- fluidPage(
              )
     ),
     
-    # ---- Trial Event Tab ----
-    tabPanel("Trial Event",
+    # ---- Milestone Tab ----
+    tabPanel("Milestone",
              fluidRow(
                
-               # Left: Condition + Trial Event form
+               # Left: Condition + Milestone form
                column(3,
                       wellPanel(
-                        textInput("event_name", "Trial Event Name"),
+                        textInput("event_name", "Milestone Name"),
                         textInput("logic_expr", "Logic Expression (e.g. (A & B) | C)", value = ""),
                         
                         radioButtons("condition_type", "Triggering Condition",
@@ -159,11 +159,11 @@ ui <- fluidPage(
                           });
                         ")),
                         
-                        actionButton("add_trial_event", "➕ Add Trial Event")
+                        actionButton("add_trial_event", "➕ Add Milestone")
                       )
                ),
                
-               # Right: Condition and Trial Event tables
+               # Right: Condition and Milestone tables
                column(9,
                       DTOutput("condition_table"),
                       hr(),

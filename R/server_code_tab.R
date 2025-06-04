@@ -56,7 +56,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     # ---- Trial Info ----
     trial_info_block <- generate_trial_info_codes(input, vals$arms, info$string)
     
-    # ---- Trial Event ----
+    # ---- Milestone ----
     trial_events_block <- generate_trial_event_codes(vals$trial_events)
     
     final_code <- glue::glue("\n{package_block}\n\n", 
@@ -75,7 +75,7 @@ server_code_tab <- function(input, output, session, vals, code_text) {
     final_code <- glue::glue("{final_code}\n\n",
                              "#-----------------------------------------\n\n", 
                              "listener <- listener()\n",
-                             "listener$add_events({event_names})\n\n",
+                             "listener$add_milestones({event_names})\n\n",
                              "controller <- controller(trial, listener)\n",
                              "controller$run(n = 1, plot_event = TRUE)\n\n", 
                              .trim = FALSE)

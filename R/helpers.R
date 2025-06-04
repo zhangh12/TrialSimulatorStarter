@@ -167,12 +167,12 @@ generate_trial_event_codes <- function(trial_events){
     }
     
     glue::glue(
-      "{event_variable}_action <- function(trial, event_name){{\n\n",
-      "  locked_data <- trial$get_locked_data(event_name)\n\n",
+      "{event_variable}_action <- function(trial, milestone_name){{\n\n",
+      "  locked_data <- trial$get_locked_data(milestone_name)\n\n",
       "  # custom codes below this line\n", 
       "  {adapt_codes}\n\n", 
       "  NULL\n\n}}\n\n",
-      "{event_variable} <- event(\n",
+      "{event_variable} <- milestone(\n",
       "  name = \"{event$name}\", \n",
       "  trigger_condition = {logic_expr}, \n",
       "  action = {event_variable}_action\n)", 

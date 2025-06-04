@@ -23,7 +23,7 @@ server_trial_events <- function(input, output, session, vals) {
     }
     
     if (length(vals$condition_ids) == 0) {
-      showNotification("Too many conditions for a trial event", type = "error")
+      showNotification("Too many conditions for a milestone", type = "error")
       return()
     }
     
@@ -66,12 +66,12 @@ server_trial_events <- function(input, output, session, vals) {
     req(nzchar(input$event_name))
     
     if (input$event_name %in% sapply(vals$trial_events, function(e) e$name)) {
-      showNotification("A trial event with this name already exists.", type = "error")
+      showNotification("A milestone with this name already exists.", type = "error")
       return()
     }
     
     if (length(vals$conditions) == 0) {
-      showNotification("Please add at least one condition before saving a trial event.", type = "error")
+      showNotification("Please add at least one condition before saving a milestone.", type = "error")
       return()
     }
     
@@ -157,8 +157,8 @@ server_trial_events <- function(input, output, session, vals) {
     fluidRow(
       column(6, actionButton("move_up_trial_event", "⬆️ Move Up", width = "100%", style = "margin-top: 10px;")),
       column(6, actionButton("move_down_trial_event", "⬇️ Move Down", width = "100%", style = "margin-top: 10px;")),
-      column(6, actionButton("view_trial_event", "🔍 View Trial Event", width = "100%", style = "margin-top: 10px;")),
-      column(6, actionButton("delete_trial_event", "🗑️ Delete Trial Event", width = "100%", style = "margin-top: 10px;"))
+      column(6, actionButton("view_trial_event", "🔍 View Milestone", width = "100%", style = "margin-top: 10px;")),
+      column(6, actionButton("delete_trial_event", "🗑️ Delete Milestone", width = "100%", style = "margin-top: 10px;"))
     )
   })
   
