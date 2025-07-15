@@ -174,7 +174,7 @@ generate_trial_event_codes <- function(trial_events){
       "  NULL\n\n}}\n\n",
       "{event_variable} <- milestone(\n",
       "  name = \"{event$name}\", \n",
-      "  trigger_condition = {logic_expr}, \n",
+      "  when = {logic_expr}, \n",
       "  action = {event_variable}_action\n)", 
       .trim = FALSE
     )
